@@ -1,0 +1,5 @@
+apps:
+  - script: './dist/api.js'
+    name: 'xxx_api'
+    exec_mode: 'cluster'
+    instances: 1

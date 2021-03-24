@@ -1,0 +1,50 @@
+{
+  "name": "xxx_server",
+  "version": "1.0.0",
+  "description": "xxx server",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/api.js",
+    "debug": "export NODE_ENV=development && npm run build && npm run start",
+    "test": "mocha './dist/**/*.test.js'",
+    "prettier": "prettier --write \"src/**/*.ts\""
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "iotex-antenna": "^0.31.0-beta-fixrlp",
+    "joi": "^17.4.0",
+    "koa": "^2.13.1",
+    "koa-body": "^4.2.0",
+    "koa-router": "^10.0.0",
+    "koa2-cors": "^2.0.6",
+    "lodash": "^4.17.21",
+    "module-alias": "^2.2.2",
+    "moment": "^2.29.1",
+    "number-precision": "^1.5.0",
+    "number-to-bn": "^1.7.0",
+    "winston": "^3.3.3",
+    "winston-rsyslog": "0.0.2"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.13.1",
+    "@types/koa-router": "^7.4.1",
+    "@types/koa2-cors": "^2.0.1",
+    "@types/lodash": "^4.14.168",
+    "@types/module-alias": "^2.0.0",
+    "typescript": "^4.2.3"
+  },
+  "_moduleAliases": {
+    "@store": "dist/store",
+    "@common": "dist/common",
+    "@controller": "dist/controller",
+    "@service": "dist/service",
+    "@middlewares": "dist/middlewares",
+    "@lib": "dist/lib",
+    "@config": "dist/config",
+    "@models": "dist/models",
+    "@routes": "dist/routes",
+    "@helpers": "dist/helpers"
+  }
+}

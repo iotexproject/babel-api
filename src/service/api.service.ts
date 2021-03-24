@@ -104,14 +104,15 @@ class ApiService extends BaseService {
   public async call(params: any[]) {
     const [ tx ] = params;
     const { to, data } = tx;
+    const address = this.fromEth(to);
 
     const { data: ret } = await antenna.iotx.readContract({
       execution: {
         amount: '0',
-        contract: to,
+        contract: address,
         data
       },
-      callerAddress: to
+      callerAddress: address
     });
 
     return ret;
@@ -120,6 +121,10 @@ class ApiService extends BaseService {
   public async estimateGas(params: any[]) {
     const [ tx ] = params;
     const { to, data } = tx;
+    const address = this.fromEth(to);
+
+    
+
     // TODO
     return '0x0';
   }

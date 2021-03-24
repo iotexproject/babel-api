@@ -101,6 +101,42 @@ class ApiService extends BaseService {
     return ret;
   }
 
+  public async call(params: any[]) {
+    const [ tx ] = params;
+    const { to, data } = tx;
+
+    const { data: ret } = await antenna.iotx.readContract({
+      execution: {
+        amount: '0',
+        contract: to,
+        data
+      },
+      callerAddress: to
+    });
+
+    return ret;
+  }
+
+  public async estimateGas(params: any[]) {
+    const [ tx ] = params;
+    const { to, data } = tx;
+    // TODO
+    return '0x0';
+  }
+
+  public async getCode(params: any[]) {
+    const [ address, block_id ] = params;
+
+  }
+
+  public async getNetworkId(params: any) {
+    return "1";
+  }
+
+  public async getPeers(params: any) {
+
+  }
+
 }
 
 export const apiService = new ApiService();

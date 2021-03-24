@@ -10,7 +10,12 @@ const API_MAP: { [key: string]: string } = {
   ['eth_getBalance']: 'getBalance',
   ['eth_gasPrice']: 'gasPrice',
   ['eth_getTransactionCount']: 'getTransactionCount',
-  ['eth_sendRawTransaction']: 'sendRawTransaction'
+  ['eth_sendRawTransaction']: 'sendRawTransaction',
+  ['eth_call']: 'call',
+  ['eth_estimateGas']: 'estimateGas',
+  ['eth_getCode']: 'getCode',
+  ['net_version']: 'getNetworkId',
+  ['getpeers']: 'getPeers'
 };
 
 class ApiController extends BaseController {

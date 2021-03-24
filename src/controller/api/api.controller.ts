@@ -3,14 +3,14 @@ import { Context } from 'koa';
 import BaseController from '../base.controller';
 import { apiService } from '@service/index';
 
-const API_MAP: { [key: string]: (params: any[]) => Promise<any> } = {
-  ['eth_chainId']: apiService.getChainId,
-  ['eth_blockNumber']: apiService.getBlockNumber,
-  ['eth_getBlockByNumber']: apiService.getBlockByNumber,
-  ['eth_getBalance']: apiService.getBalance,
-  ['eth_gasPrice']: apiService.gasPrice,
-  ['eth_getTransactionCount']: apiService.getTransactionCount,
-  ['eth_sendRawTransaction']: apiService.sendRawTransaction
+const API_MAP: { [key: string]: string } = {
+  ['eth_chainId']: 'getChainId',
+  ['eth_blockNumber']: 'getBlockNumber',
+  ['eth_getBlockByNumber']: 'getBlockByNumber',
+  ['eth_getBalance']: 'getBalance',
+  ['eth_gasPrice']: 'gasPrice',
+  ['eth_getTransactionCount']: 'getTransactionCount',
+  ['eth_sendRawTransaction']: 'sendRawTransaction'
 };
 
 class ApiController extends BaseController {
@@ -23,9 +23,10 @@ class ApiController extends BaseController {
     const ret = { id, jsonrpc };
     let result;
 
-    const cb = API_MAP[method];
-    if (cb != null) {
-      result = await cb(params);
+    const service: any = apiService;
+    const name = API_MAP[method];
+    if (name != null && service[name] != null) {
+      result = await service[name](params);
     }
 
     _.assign(ret, { result });

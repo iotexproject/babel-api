@@ -1,8 +1,17 @@
 import _ from 'lodash';
-import moment from 'moment';
 import { Context } from 'koa';
 import BaseController from '../base.controller';
 import { apiService } from '@service/index';
+
+const API_MAP: { [key: string]: (params: any[]) => Promise<any> } = {
+  ['eth_chainId']: apiService.getChainId,
+  ['eth_blockNumber']: apiService.getBlockNumber,
+  ['eth_getBlockByNumber']: apiService.getBlockByNumber,
+  ['eth_getBalance']: apiService.getBalance,
+  ['eth_gasPrice']: apiService.gasPrice,
+  ['eth_getTransactionCount']: apiService.getTransactionCount,
+  ['eth_sendRawTransaction']: apiService.sendRawTransaction
+};
 
 class ApiController extends BaseController {
 
@@ -14,20 +23,9 @@ class ApiController extends BaseController {
     const ret = { id, jsonrpc };
     let result;
 
-    if (method == 'eth_chainId') {
-      result = '0x1';
-    } else if (method == 'eth_blockNumber') {
-      result = await apiService.getBlockNumber();
-    } else if (method == 'eth_getBlockByNumber') {
-      result = await apiService.getBlockByNumber(params[0]);
-    } else if (method == 'eth_getBalance') {
-      result = await apiService.getBalance(params[0]);
-    } else if (method == 'eth_gasPrice') {
-      result = await apiService.gasPrice();
-    } else if (method == 'eth_getTransactionCount') {
-      result = await apiService.getTransactionCount(params[0], params[1]);
-    } else if (method == 'eth_sendRawTransaction') {
-      result = await apiService.sendRawTransaction(params[0]);
+    const cb = API_MAP[method];
+    if (cb != null) {
+      result = await cb(params);
     }
 
     _.assign(ret, { result });

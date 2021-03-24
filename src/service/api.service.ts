@@ -36,19 +36,25 @@ class ApiService extends BaseService {
     return n.lt(new BN(0)) ? '-0x' + result.substr(1) : '0x' + result;
   } 
 
-  public async getBlockNumber() {
+  public async getChainId(params: any[]) {
+    return '0x1';
+  }
+
+  public async getBlockNumber(params: any[]) {
     const ret = await antenna.iotx.getChainMeta({});
     return _.get(ret, 'chainMeta.height', 0);
   }
 
-  public async getBalance(address: string) {
+  public async getBalance(params: any[]) {
+    const [ address ] = params;
     const ret = await antenna.iotx.getAccount({ address: this.fromEth(address) });
     
     const b = _.get(ret, 'accountMeta.balance', 0);
     return this.numberToHex(b);
   }
 
-  public async getBlockByNumber(block_id: number) {
+  public async getBlockByNumber(params: any[]) {
+    const [ block_id ] = params;
     const ret = await antenna.iotx.getBlockMetas({ byIndex: { start: block_id, count: 1 } });
     const { blkMetas, total } = ret;
     if (total == 0)
@@ -77,18 +83,20 @@ class ApiService extends BaseService {
     };
   }
 
-  public async gasPrice() {
+  public async gasPrice(params: any) {
     const { gasPrice } = await antenna.iotx.suggestGasPrice({});
     return gasPrice;
   }
 
-  public async getTransactionCount(address: string, block_id: string) {
+  public async getTransactionCount(params: any[]) {
+    const [ address, block_id ] = params;
     const ret = await antenna.iotx.getAccount({ address: this.fromEth(address) });    
     const b = _.get(ret, 'accountMeta.nonce', 0);
     return b;
   }
 
-  public async sendRawTransaction(data: string) {
+  public async sendRawTransaction(params: any[]) {
+    const [ data ] = params;
     const ret = await antenna.iotx.sendRawTransaction({ chainID: 1, data });
     return ret;
   }

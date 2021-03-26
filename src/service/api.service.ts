@@ -8,7 +8,10 @@ import BaseService from './base.service';
 import { Assert, Exception } from '@common/exceptions';
 import { Code } from '@common/enums';
 
-const antenna = new Antenna("https://api.iotex.one:443");
+//const antenna = new Antenna("https://api.iotex.one:443");
+const antenna = new Antenna("https://api.nightly-cluster-2.iotex.one:443");
+
+const CHAIN_ID = 4689;
 
 class ApiService extends BaseService {
 
@@ -37,7 +40,7 @@ class ApiService extends BaseService {
   } 
 
   public async getChainId(params: any[]) {
-    return '0x1';
+    return this.numberToHex(CHAIN_ID);
   }
 
   public async getBlockNumber(params: any[]) {
@@ -97,7 +100,7 @@ class ApiService extends BaseService {
 
   public async sendRawTransaction(params: any[]) {
     const [ data ] = params;
-    const ret = await antenna.iotx.sendRawTransaction({ chainID: 1, data });
+    const ret = await antenna.iotx.sendRawTransaction({ chainID: CHAIN_ID, data });
     return ret;
   }
 
@@ -106,14 +109,22 @@ class ApiService extends BaseService {
     const { to, data } = tx;
     const address = this.fromEth(to);
 
+    if (to == '0xb1f8e55c7f64d203c1400b9d8555d050f94adf39') {
+      console.log('skip');
+      return;
+    }
+
     const { data: ret } = await antenna.iotx.readContract({
       execution: {
         amount: '0',
-        contract: address,
+	contract: address,
+	externChainID: CHAIN_ID,
         data
       },
       callerAddress: address
     });
+
+    console.log(ret);
 
     return ret;
   }

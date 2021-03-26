@@ -13,7 +13,6 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "^8.2.0",
-    "iotex-antenna": "^0.31.0-beta-fixrlp",
     "joi": "^17.4.0",
     "koa": "^2.13.1",
     "koa-body": "^4.2.0",

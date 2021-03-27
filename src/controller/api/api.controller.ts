@@ -15,7 +15,8 @@ const API_MAP: { [key: string]: string } = {
   ['eth_estimateGas']: 'estimateGas',
   ['eth_getCode']: 'getCode',
   ['net_version']: 'getNetworkId',
-  ['getpeers']: 'getPeers'
+  ['getpeers']: 'getPeers',
+  ['eth_getTransactionReceipt']: 'getTransactionReceipt'
 };
 
 class ApiController extends BaseController {
@@ -31,12 +32,16 @@ class ApiController extends BaseController {
     const service: any = apiService;
     const name = API_MAP[method];
     if (name != null && service[name] != null) {
-      result = await service[name](params);
+      try {
+        result = await service[name](params);
+      } catch (e) {
+        result = { error: e.toString() };
+      }
     }
 
     _.assign(ret, { result });
 
-    console.log(`< ${result}`);
+    console.log(`< ${method}  ${typeof(result) == 'object' ? JSON.stringify(result) : result }`);
 
     return ret;
   }

@@ -94,7 +94,7 @@ class ApiService extends BaseService {
   public async getTransactionCount(params: any[]) {
     const [ address, block_id ] = params;
     const ret = await antenna.iotx.getAccount({ address: this.fromEth(address) });    
-    const b = _.get(ret, 'accountMeta.nonce', 0);
+    const b = _.get(ret, 'accountMeta.pendingNonce', 0);
     return b;
   }
 
@@ -109,22 +109,22 @@ class ApiService extends BaseService {
     const { to, data } = tx;
     const address = this.fromEth(to);
 
-    if (to == '0xb1f8e55c7f64d203c1400b9d8555d050f94adf39') {
-      console.log('skip');
+    if (to == '0xb1f8e55c7f64d203c1400b9d8555d050f94adf39')
       return;
-    }
+
+    const d = Buffer.from(data.slice(2), 'hex');
 
     const { data: ret } = await antenna.iotx.readContract({
       execution: {
         amount: '0',
 	contract: address,
 	externChainID: CHAIN_ID,
-        data
+        data: d
       },
       callerAddress: address
     });
 
-    console.log(ret);
+    console.log(`ret=${ret}`);
 
     return ret;
   }
@@ -153,6 +153,30 @@ class ApiService extends BaseService {
 
   }
 
+  public async getTransactionReceipt(params: any) {
+    let [ hash ] = params;
+    if (_.startsWith(hash, '0x')) hash = hash.slice(2);
+
+    console.log(`hash=${hash}`);
+
+    const ret = await antenna.iotx.getReceiptByAction({ actionHash: hash });
+    const { receiptInfo } = ret;
+    const { receipt, blkHash } = receiptInfo || {};
+    const { status, blkHeight, actHash, gasConsumed, contractAddress, logs } = receipt || {};
+
+    console.log(JSON.stringify(ret));
+
+    return {
+      blockNumber: this.numberToHex(blkHeight || 0),
+      blockHash: blkHash,
+      transactionHash: actHash?.toString('hex'),
+      cumulativeGasUsed: this.numberToHex(gasConsumed || 0),
+      gasUsed: this.numberToHex(gasConsumed || 0),
+      logs: [],
+      contractAddress: this.toEth(contractAddress || ''),
+      status: (status == 1 ? 1 : 0)
+    };
+  }
 }
 
 export const apiService = new ApiService();

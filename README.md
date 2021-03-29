@@ -1,4 +1,4 @@
-# Bootstrap
+# Babel-API
 
 ## 0. Overview
 
@@ -16,11 +16,7 @@ sudo yum install nodejs
 ### 1.3. Configuration file
 create xxx/.env
 ```
-PROJECT=xxx
-
-API_PORT=9000
-
-NODE_ENV=development
+PORT=9000
 ```
 
 ### 1.4. Install Node Libraries
@@ -33,17 +29,7 @@ npm i
 npm run build
 ```
 
-### 1.6. Create Database
+### 1.8. Start Service
 ```
-CREATE DATABASE xxx DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-### 1.7. Initial Database
-```
-node dist/tools/initdb.js
-```
-
-### 1.8. Start Services
-```
-pm2 start all.yml
+npm start
 ```

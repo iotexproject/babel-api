@@ -173,7 +173,7 @@ class ApiService extends BaseService {
       cumulativeGasUsed: this.numberToHex(gasConsumed || 0),
       gasUsed: this.numberToHex(gasConsumed || 0),
       logs: [],
-      contractAddress: this.toEth(contractAddress || ''),
+      contractAddress: (contractAddress == '' ? contractAddress : this.toEth(contractAddress || '')),
       status: (status == 1 ? 1 : 0)
     };
   }

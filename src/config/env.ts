@@ -21,7 +21,7 @@ export const SYSLOG_PORT = getNumber('SYSLOGD_PORT', 514);
 export const SYSLOG_PROTOCOL = get('SYSLOGD_PROTOCOL', 'U');
 export const SYSLOG_TAG = get('SYSLOGD_TAG', `${PROJECT}`);
 
-export const API_PORT = getNumber('API_PORT', 9000);
+export const API_PORT = getNumber('API_PORT', 80);
 
 export const LOG_LEVEL = get('LOG_LEVEL', 'error');
 export const DB_LOG = getNumber('DB_LOG', 0) > 0;

@@ -8,7 +8,7 @@ import http from 'http';
 import { logger } from '@common/utils';
 import { handleRouter } from './helpers/http';
 import { logger as reqLogger, cors, body, realIp } from '@middlewares/index';
-import { API_PORT } from '@config/env';
+import { PORT } from '@config/env';
 import apiRoutes from '@routes/api.routes';
 
 const app = new Koa();
@@ -28,6 +28,6 @@ app.use(handleRouter([ ...apiRoutes ], 'api').routes());
 const server = http.createServer(app.callback());
 server.keepAliveTimeout = 120 * 1000;
 server.headersTimeout = 125 * 1000;
-server.listen(API_PORT, 65535, () => {
-  logger.info(`api server start, hostname: ${os.hostname()}, port: ${API_PORT}`);
+server.listen(PORT, 65535, () => {
+  logger.info(`api server start, hostname: ${os.hostname()}, port: ${PORT}`);
 });

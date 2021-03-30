@@ -103,10 +103,11 @@ class ApiService extends BaseService {
     const [ tx ] = params;
     const { to, data, from, value } = tx;
 
+    const dst = this.fromEth(to);
     let isContract = true;
     if (to !== "") {
       const account = await antenna.iotx.getAccount({
-        address: to
+        address: dst
       });
       if (!account.accountMeta) {
         throw new Error(`can't fetch ${to} account info`);
@@ -115,7 +116,6 @@ class ApiService extends BaseService {
     }
 
     const amount = numberToBN(value).toString();
-    const dst = this.fromEth(to);
 
     const args: any = { callerAddress: this.fromEth(from) };
     if (isContract) {

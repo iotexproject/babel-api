@@ -56,36 +56,6 @@ class ApiService extends BaseService {
     return this.numberToHex(b);
   }
 
-  public async getBlockByNumber(params: any[]) {
-    const [ block_id ] = params;
-    const ret = await antenna.iotx.getBlockMetas({ byIndex: { start: block_id, count: 1 } });
-    const { blkMetas, total } = ret;
-    if (total == 0)
-      return {};
-
-    const b = blkMetas[0];
-    return {
-      number: b.height,
-      hash: b.hash,
-      parentHash: '',
-      nonce: 0,
-      sha3Uncles: '',
-      logsBloom: '',
-      transactionsRoot: b.txRoot,
-      stateRoot: '',
-      miner: this.toEth(b.producerAddress),
-      difficulty: '',
-      totalDifficulty: '',
-      size: b.numActions,
-      extraData: '0x',
-      gasLimit: 10000,
-      gasUsed: 1,
-      timestamp: moment(b.timestamp).valueOf(),
-      transactions: [],
-      uncles: []
-    };
-  }
-
   public async gasPrice(params: any) {
     const { gasPrice } = await antenna.iotx.suggestGasPrice({});
     return gasPrice;
@@ -117,8 +87,8 @@ class ApiService extends BaseService {
     const { data: ret } = await antenna.iotx.readContract({
       execution: {
         amount: '0',
-	contract: address,
-	externChainID: CHAIN_ID,
+        contract: address,
+        externChainID: CHAIN_ID,
         data: d
       },
       callerAddress: address
@@ -131,18 +101,29 @@ class ApiService extends BaseService {
 
   public async estimateGas(params: any[]) {
     const [ tx ] = params;
-    const { to, data } = tx;
-    const address = this.fromEth(to);
-
+    const { to, data, from, value, gas } = tx;
+    const args = {
+      to: this.fromEth(to),
+      data: data.slice(2)
+    };
     
+    if (_.size(from) > 0)
+      _.assign(args, { from: _.fromEth(from) });
 
-    // TODO
-    return '0x0';
+    if (_.size(value) > 0)
+      _.assign(args, { value: value.slice(2) });
+
+    if (_.size(gas) > 0)
+      _.assign(args, { gas: gas.slice(2) });
+
+    const ret = await antenna.iotx.estimateGas(args);
+
+    return this.numberToHex(ret);
   }
 
   public async getCode(params: any[]) {
     const [ address, block_id ] = params;
-
+    return '0x0';
   }
 
   public async getNetworkId(params: any) {
@@ -150,7 +131,7 @@ class ApiService extends BaseService {
   }
 
   public async getPeers(params: any) {
-
+    return [];
   }
 
   public async getTransactionReceipt(params: any) {
@@ -177,6 +158,193 @@ class ApiService extends BaseService {
       status: (status == 1 ? 1 : 0)
     };
   }
+
+  public async notImplememted(params: any) {
+    throw new Exception(Code.NOT_IMPLEMENTED, 'function not implemented');
+  }
+
+  public async getNodeInfo(params: any) {
+    const { serverMeta } = await antenna.iotx.getServerMeta({});
+    return `${_.get(serverMeta, 'packageVersion')}/${_.get(serverMeta, 'goVersion')}`;
+  }
+
+  public async getPeerCount(params: any) {
+    return '0x64';
+  }
+
+  public async isListening(params: any) {
+    return true;
+  }
+
+  public async getProtocolVersion(params: any) {
+    return '64';
+  }
+
+  public async isSyncing(params: any) {
+    return false;
+  }
+
+  public async getCoinbase(params: any) {
+    return this.notImplememted(params);
+  }
+
+  public async isMining(params: any) {
+    return false;
+  }
+
+  public async getHashrate(params: any) {
+    return '0x500000';
+  }
+
+  private async blockByHash(hash: string) {
+    const ret = await antenna.iotx.getBlockMetas({ byHash: { hash } });
+    return _.get(ret, 'blkMetas[0]');
+  }
+  
+  private async blockById(id: string) {
+    const ret = await antenna.iotx.getBlockMetas({ byIndex: { start: id, count: 1 } });
+    return _.get(ret, 'blkMetas[0]');
+  }
+
+  public async getBlockTransactionCountByHash(params: any) {
+    const b = await this.blockByHash(params[0]);
+    return this.numberToHex(b?.numActions || 0);
+  }
+
+  public async getBlockTransactionCountByNumber(params: any) {
+    const b = await this.blockById(params[0]);
+    return this.numberToHex(b?.numActions || 0);
+  }
+
+  public async getBlockByNumber(params: any[]) {
+    const [ block_id ] = params;
+    const b = await this.blockById(block_id);
+    if (!b)
+      return {};
+
+    return {
+      number: b.height,
+      hash: b.hash,
+      parentHash: '',
+      nonce: 0,
+      sha3Uncles: '',
+      logsBloom: '',
+      transactionsRoot: b.txRoot,
+      stateRoot: '',
+      miner: this.toEth(b.producerAddress),
+      difficulty: '',
+      totalDifficulty: '',
+      size: b.numActions,
+      extraData: '0x',
+      gasLimit: 10000,
+      gasUsed: 1,
+      timestamp: moment(b.timestamp).valueOf(),
+      transactions: [],
+      uncles: []
+    };
+  }
+
+  public async getBlockByHash(params: any) {
+    const [ blkHash ] = params;
+    const b = await this.blockByHash(blkHash);
+    if (!b)
+      return {};
+
+    return {
+      number: b.height,
+      hash: b.hash,
+      parentHash: '',
+      nonce: 0,
+      sha3Uncles: '',
+      logsBloom: '',
+      transactionsRoot: b.txRoot,
+      stateRoot: '',
+      miner: this.toEth(b.producerAddress),
+      difficulty: '',
+      totalDifficulty: '',
+      size: b.numActions,
+      extraData: '0x',
+      gasLimit: 10000,
+      gasUsed: 1,
+      timestamp: moment(b.timestamp).valueOf(),
+      transactions: [],
+      uncles: []
+    };
+  }
+
+  private async transaction(ret: any) {
+    const { actionInfo } = ret;
+    const { action, actHash, blkHash, blkHeight, sender, timestamp } = actionInfo;
+    const { core, senderPubKey, signature } = action;
+    const { nonce, gasLimit, gasPrice, transfer, execution } = core;
+
+    let value = '0x0';
+    let to = '';
+    let data = '';
+    if (transfer != null) {
+      const { amount, recipient } = transfer;
+      value = this.numberToHex(amount);
+      to = this.toEth(recipient);
+    } else if (execution != null) {
+      const { amount, contract, data: d } = execution;
+      value = this.numberToHex(amount);
+      to = this.toEth(contract);
+      data = d.startsWith('0x') ? d : `0x${d}`;
+    }
+
+    return {
+      hash: `0x${actHash}`,
+      blockHash: `0x${blkHash}`,
+      blockNumber: this.numberToHex(blkHeight),
+      transactionIndex: '0x0', // TODO
+      nonce: this.numberToHex(nonce),
+      gas: this.numberToHex(gasLimit),
+      gasPrice: this.numberToHex(gasPrice),
+      value,
+      to,
+      from: this.toEth(sender),
+      input: data
+    };
+  }
+
+  public async getTransactionByHash(params: any) {
+    const [ hash ] = params;
+    const ret = await antenna.iotx.getActions({ byHash: { actionHash: hash, checkingPending: true } });
+    return this.transaction(ret);
+  }
+
+  public async getTransactionByBlockHashAndIndex(params: any) {
+    const [ blkHash, id ] = params;
+    const ret = await antenna.iotx.getActions({ byBlk: { blkHash, start: id, count: 1 } });
+    return this.transaction(ret);
+  }
+
+  public async getTransactionByBlockNumberAndIndex(params: any) {
+    const [ blkId, id ] = params;
+    const b = await this.blockById(blkId);
+    if (!b)
+      return {};
+
+    const ret = await antenna.iotx.getActions({ byBlk: { blkHash: b.hash, start: id, count: 1 } });
+    return this.transaction(ret);
+  }
+
+  public async getPendingTransactions(params: any) {
+    return this.notImplememted(params);
+  }
+
+  public async compileLLL(params: any) {
+    return this.notImplememted(params);
+  }
+
+  public async compileSolidity(params: any) {
+    return this.notImplememted(params);
+  }
+
+  public async compileSerpent(params: any) {
+    return this.notImplememted(params);
+  }
+
 }
 
 export const apiService = new ApiService();

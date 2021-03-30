@@ -101,25 +101,41 @@ class ApiService extends BaseService {
 
   public async estimateGas(params: any[]) {
     const [ tx ] = params;
-    const { to, data, from, value, gas } = tx;
-    const args = {
-      to: this.fromEth(to),
-      data: data.slice(2),
-      chainId: CHAIN_ID
-    };
-    
-    if (_.size(from) > 0)
-      _.assign(args, { from: _.fromEth(from) });
+    const { to, data, from, value } = tx;
 
-    if (_.size(value) > 0)
-      _.assign(args, { value: value.slice(2) });
+    let isContract = true;
+    if (to !== "") {
+      const account = await antenna.iotx.getAccount({
+        address: to
+      });
+      if (!account.accountMeta) {
+        throw new Error(`can't fetch ${to} account info`);
+      }
+      isContract = account.accountMeta.isContract;
+    }
 
-    if (_.size(gas) > 0)
-      _.assign(args, { gas: gas.slice(2) });
+    const amount = numberToBN(value).toString();
+    const dst = this.fromEth(to);
 
-    const ret = await antenna.iotx.estimateGas(args);
+    const args: any = { callerAddress: this.fromEth(from) };
+    if (isContract) {
+      args.execution = {
+        amount,
+        contract: dst,
+        data: data.slice(2),
+        externChainID: CHAIN_ID
+      };
+    } else {
+      args.transfer = {
+        amount,
+        recipient: dst,
+        payload: data.slice(2),
+        externChainID: CHAIN_ID
+      };
+    }
 
-    return this.numberToHex(ret);
+    const { gas } = await antenna.iotx.estimateActionGasConsumption(args);
+    return this.numberToHex(gas);
   }
 
   public async getCode(params: any[]) {

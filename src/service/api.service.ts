@@ -45,7 +45,8 @@ class ApiService extends BaseService {
 
   public async getBlockNumber(params: any[]) {
     const ret = await antenna.iotx.getChainMeta({});
-    return _.get(ret, 'chainMeta.height', 0);
+    const n =  _.get(ret, 'chainMeta.height', 0);
+    return this.numberToHex(n);
   }
 
   public async getBalance(params: any[]) {

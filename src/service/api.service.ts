@@ -104,7 +104,8 @@ class ApiService extends BaseService {
     const { to, data, from, value, gas } = tx;
     const args = {
       to: this.fromEth(to),
-      data: data.slice(2)
+      data: data.slice(2),
+      chainId: CHAIN_ID
     };
     
     if (_.size(from) > 0)

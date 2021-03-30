@@ -155,14 +155,10 @@ class ApiService extends BaseService {
     let [ hash ] = params;
     if (_.startsWith(hash, '0x')) hash = hash.slice(2);
 
-    console.log(`hash=${hash}`);
-
     const ret = await antenna.iotx.getReceiptByAction({ actionHash: hash });
     const { receiptInfo } = ret;
     const { receipt, blkHash } = receiptInfo || {};
     const { status, blkHeight, actHash, gasConsumed, contractAddress, logs } = receipt || {};
-
-    console.log(JSON.stringify(ret));
 
     return {
       blockNumber: this.numberToHex(blkHeight || 0),
@@ -214,11 +210,11 @@ class ApiService extends BaseService {
   }
 
   private async blockByHash(hash: string) {
-    const ret = await antenna.iotx.getBlockMetas({ byHash: { hash } });
+    const ret = await antenna.iotx.getBlockMetas({ byHash: { blkHash: hash } });
     return _.get(ret, 'blkMetas[0]');
   }
   
-  private async blockById(id: string) {
+  private async blockById(id: number) {
     const ret = await antenna.iotx.getBlockMetas({ byIndex: { start: id, count: 1 } });
     return _.get(ret, 'blkMetas[0]');
   }

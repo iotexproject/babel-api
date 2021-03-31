@@ -25,7 +25,7 @@ const API_MAP: { [key: string]: string } = {
   ['eth_coinbase']: 'getCoinbase',
   ['eth_mining']: 'isMining',
   ['eth_hashrate']: 'getHashrate',
-  ['eth_accounts']: 'notImplememted',
+  ['eth_accounts']: 'getAccounts',
   ['eth_getStorageAt']: 'notImplememted',
   ['eth_getBlockTransactionCountByHash']: 'getBlockTransactionCountByHash',
   ['eth_getBlockTransactionCountByNumber']: 'getBlockTransactionCountByNumber',

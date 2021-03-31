@@ -49,6 +49,10 @@ class ApiService extends BaseService {
     return this.numberToHex(n);
   }
 
+  public async getAccounts(params: any[]) {
+    return [];
+  }
+
   public async getBalance(params: any[]) {
     const [ address ] = params;
     const ret = await antenna.iotx.getAccount({ address: this.fromEth(address) });
@@ -66,7 +70,7 @@ class ApiService extends BaseService {
     const [ address, block_id ] = params;
     const ret = await antenna.iotx.getAccount({ address: this.fromEth(address) });    
     const b = _.get(ret, 'accountMeta.pendingNonce', 0);
-    return b;
+    return this.numberToHex(b);
   }
 
   public async sendRawTransaction(params: any[]) {
@@ -104,9 +108,11 @@ class ApiService extends BaseService {
     const [ tx ] = params;
     const { to, data, from, value } = tx;
 
-    const dst = this.fromEth(to);
+    const toValid = _.size(to) > 0;
+
+    const dst = toValid ? this.fromEth(to) : '';
     let isContract = true;
-    if (to !== "") {
+    if (toValid) {
       const account = await antenna.iotx.getAccount({
         address: dst
       });
@@ -116,7 +122,7 @@ class ApiService extends BaseService {
       isContract = account.accountMeta.isContract;
     }
 
-    const amount = numberToBN(value).toString();
+    const amount = numberToBN(value || 0).toString();
 
     const args: any = { callerAddress: this.fromEth(from) };
     if (isContract) {
@@ -232,27 +238,36 @@ class ApiService extends BaseService {
 
   public async getBlockByNumber(params: any[]) {
     const [ block_id ] = params;
-    const b = await this.blockById(block_id);
+
+    let bid = block_id;
+    if (block_id == 'latest' || block_id == '0xNaN') {
+      const ret = await antenna.iotx.getChainMeta({});
+      bid = _.get(ret, 'chainMeta.height', 0);
+    } else {
+      bid = numberToBN(block_id).toNumber();
+    }
+
+    const b = await this.blockById(bid);
     if (!b)
       return {};
 
     return {
-      number: b.height,
-      hash: b.hash,
-      parentHash: '',
-      nonce: 0,
+      number: this.numberToHex(b.height),
+      hash: '0x' + b.hash,
+      parentHash: '0x' + b.previousBlockHash,
+      nonce: '0x1',
       sha3Uncles: '',
-      logsBloom: '',
-      transactionsRoot: b.txRoot,
-      stateRoot: '',
+      logsBloom: b.logsBloom,
+      transactionsRoot: '0x' + b.txRoot,
+      stateRoot: '0x' + b.deltaStateDigest,
       miner: this.toEth(b.producerAddress),
-      difficulty: '',
-      totalDifficulty: '',
-      size: b.numActions,
+      difficulty: '21345678965432',
+      totalDifficulty: '324567845321',
+      size: this.numberToHex(b.numActions),
       extraData: '0x',
-      gasLimit: 10000,
-      gasUsed: 1,
-      timestamp: moment(b.timestamp).valueOf(),
+      gasLimit: '0xbebc20',
+      gasUsed: '0xbebc20',
+      timestamp: this.numberToHex(b.timestamp.seconds),
       transactions: [],
       uncles: []
     };
@@ -265,25 +280,26 @@ class ApiService extends BaseService {
       return {};
 
     return {
-      number: b.height,
-      hash: b.hash,
-      parentHash: '',
-      nonce: 0,
+      number: this.numberToHex(b.height),
+      hash: '0x' + b.hash,
+      parentHash: '0x' + b.previousBlockHash,
+      nonce: '0x1',
       sha3Uncles: '',
-      logsBloom: '',
-      transactionsRoot: b.txRoot,
-      stateRoot: '',
+      logsBloom: b.logsBloom,
+      transactionsRoot: '0x' + b.txRoot,
+      stateRoot: '0x' + b.deltaStateDigest,
       miner: this.toEth(b.producerAddress),
-      difficulty: '',
-      totalDifficulty: '',
-      size: b.numActions,
+      difficulty: '21345678965432',
+      totalDifficulty: '324567845321',
+      size: this.numberToHex(b.numActions),
       extraData: '0x',
-      gasLimit: 10000,
-      gasUsed: 1,
-      timestamp: moment(b.timestamp).valueOf(),
+      gasLimit: '0x10000',
+      gasUsed: '0x1',
+      timestamp: this.numberToHex(b.timestamp.seconds),
       transactions: [],
       uncles: []
     };
+
   }
 
   private async transaction(ret: any) {

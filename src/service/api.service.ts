@@ -4,6 +4,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import Antenna from 'iotex-antenna';
 import { fromString, fromBytes } from 'iotex-antenna/lib/crypto/address';
+import { IBlockMeta, IGetLogsRequest } from 'iotex-antenna/rpc-method/types';
 import BaseService from './base.service';
 import { Assert, Exception } from '@common/exceptions';
 import { Code } from '@common/enums';
@@ -179,12 +180,12 @@ class ApiService extends BaseService {
     return '0x500000';
   }
 
-  private async blockByHash(hash: string) {
+  private async blockByHash(hash: string): Promise<IBlockMeta | undefined> {
     const ret = await antenna.iotx.getBlockMetas({ byHash: { blkHash: hash } });
     return _.get(ret, 'blkMetas[0]');
   }
   
-  private async blockById(id: number) {
+  private async blockById(id: number): Promise<IBlockMeta | undefined> {
     const ret = await antenna.iotx.getBlockMetas({ byIndex: { start: id, count: 1 } });
     return _.get(ret, 'blkMetas[0]');
   }
@@ -219,7 +220,7 @@ class ApiService extends BaseService {
       hash: '0x' + b.hash,
       parentHash: '0x' + b.previousBlockHash,
       nonce: '0x1',
-      sha3Uncles: '',
+      sha3Uncles: '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
       logsBloom: b.logsBloom,
       transactionsRoot: '0x' + b.txRoot,
       stateRoot: '0x' + b.deltaStateDigest,
@@ -247,7 +248,7 @@ class ApiService extends BaseService {
       hash: '0x' + b.hash,
       parentHash: '0x' + b.previousBlockHash,
       nonce: '0x1',
-      sha3Uncles: '',
+      sha3Uncles: '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
       logsBloom: b.logsBloom,
       transactionsRoot: '0x' + b.txRoot,
       stateRoot: '0x' + b.deltaStateDigest,
@@ -326,16 +327,56 @@ class ApiService extends BaseService {
     return this.notImplememted(params);
   }
 
-  public async compileLLL(params: any) {
-    return this.notImplememted(params);
-  }
+  public async getLogs(params: any) {
+    const { fromBlock, toBlock, topics, address } = params;
+    
+    const self = this;
+    const args: IGetLogsRequest = { filter: { address: [], topics: [] } };
+    const predefined = [ 'latest', 'pending' ];
+    let from = 0;
+    let to = 0;
 
-  public async compileSolidity(params: any) {
-    return this.notImplememted(params);
-  }
+    if (predefined.includes(fromBlock) || predefined.includes(toBlock)) {
+      const meta = await antenna.iotx.getChainMeta({});
+      const height = _.get(meta, 'chainMeta.height', 0);
+      if (predefined.includes(fromBlock))
+        from = height;
+      if (predefined.includes(toBlock))
+        to = height;
+    }
+    
+    if (typeof(fromBlock) == 'string' && fromBlock.startsWith('0x'))
+      from = numberToBN(fromBlock).toNumber();
 
-  public async compileSerpent(params: any) {
-    return this.notImplememted(params);
+    if (typeof(toBlock) == 'string' && toBlock.startsWith('0x'))
+      to = numberToBN(toBlock).toNumber();
+
+    if (from > 0 || to > 0)
+      args.byRange = { fromBlock: from, toBlock: to, paginationSize: 1, count: 100 };
+
+    if (!_.isNil(address)) {
+      const addresses = (_.isArray(address) ? address : [ address ]);
+      args.filter.address = addresses.map(v => self.fromEth(v));
+    }
+
+    if (!_.isNil(topics))
+      args.filter.topics = (_.isArray(topics) ? topics : [ topics ]);
+
+    const ret = await antenna.iotx.getLogs(args);
+
+    console.log(JSON.stringify(ret));
+
+    const logs = ret.logs || [];
+    return logs.map(v => ({
+      blockHash: '0x0', // TODO
+      transactionHash: '0x' + v.actHash.toString('hex'),
+      logIndex: this.numberToHex(v.index),
+      blockNumber: this.numberToHex(v.blkHeight),
+      transactionIndex: '0x0', // TODO
+      address: this.toEth(v.contractAddress),
+      data: '0x' + v.data.toString('hex'),
+      topics: v.topics.map(v => '0x' + v.toString('hex'))
+    }));
   }
 
 }

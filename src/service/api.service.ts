@@ -93,13 +93,10 @@ class ApiService extends BaseService {
       execution: {
         amount: '0',
         contract: address,
-        externChainID: CHAIN_ID,
         data: d
       },
       callerAddress: address
     });
-
-    console.log(`ret=${ret}`);
 
     return ret;
   }
@@ -151,7 +148,7 @@ class ApiService extends BaseService {
   }
 
   public async getNetworkId(params: any) {
-    return "1";
+    return "4689";
   }
 
   public async getPeers(params: any) {
@@ -304,7 +301,7 @@ class ApiService extends BaseService {
 
   private async transaction(ret: any) {
     const { actionInfo } = ret;
-    const { action, actHash, blkHash, blkHeight, sender, timestamp } = actionInfo;
+    const { action, actHash, blkHash, blkHeight, sender, gasFee, timestamp } = actionInfo[0];
     const { core, senderPubKey, signature } = action;
     const { nonce, gasLimit, gasPrice, transfer, execution } = core;
 
@@ -318,8 +315,8 @@ class ApiService extends BaseService {
     } else if (execution != null) {
       const { amount, contract, data: d } = execution;
       value = this.numberToHex(amount);
-      to = this.toEth(contract);
-      data = d.startsWith('0x') ? d : `0x${d}`;
+      to = _.size(contract) > 0 ? this.toEth(contract) : '';
+      data = `0x${d.toString('hex')}`;
     }
 
     return {

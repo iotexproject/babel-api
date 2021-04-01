@@ -4,7 +4,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import Antenna from 'iotex-antenna';
 import { fromString, fromBytes } from 'iotex-antenna/lib/crypto/address';
-import { IBlockMeta, IGetLogsRequest } from 'iotex-antenna/rpc-method/types';
+import { IBlockMeta, IGetLogsRequest } from 'iotex-antenna/lib/rpc-method/types';
 import BaseService from './base.service';
 import { Assert, Exception } from '@common/exceptions';
 import { Code } from '@common/enums';
@@ -218,10 +218,10 @@ class ApiService extends BaseService {
     return {
       number: this.numberToHex(b.height),
       hash: '0x' + b.hash,
-      parentHash: '0x' + b.previousBlockHash,
+      parentHash: '0x' + (<any>b).previousBlockHash,
       nonce: '0x1',
       sha3Uncles: '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
-      logsBloom: b.logsBloom,
+      logsBloom: (<any>b).logsBloom,
       transactionsRoot: '0x' + b.txRoot,
       stateRoot: '0x' + b.deltaStateDigest,
       miner: this.toEth(b.producerAddress),
@@ -246,10 +246,10 @@ class ApiService extends BaseService {
     return {
       number: this.numberToHex(b.height),
       hash: '0x' + b.hash,
-      parentHash: '0x' + b.previousBlockHash,
+      parentHash: '0x' + (<any>b).previousBlockHash,
       nonce: '0x1',
       sha3Uncles: '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
-      logsBloom: b.logsBloom,
+      logsBloom: (<any>b).logsBloom,
       transactionsRoot: '0x' + b.txRoot,
       stateRoot: '0x' + b.deltaStateDigest,
       miner: this.toEth(b.producerAddress),
@@ -328,7 +328,7 @@ class ApiService extends BaseService {
   }
 
   public async getLogs(params: any) {
-    const { fromBlock, toBlock, topics, address } = params;
+    const { fromBlock, toBlock, topics, address } = params[0];
     
     const self = this;
     const args: IGetLogsRequest = { filter: { address: [], topics: [] } };
@@ -352,7 +352,7 @@ class ApiService extends BaseService {
       to = numberToBN(toBlock).toNumber();
 
     if (from > 0 || to > 0)
-      args.byRange = { fromBlock: from, toBlock: to, paginationSize: 1, count: 100 };
+      args.byRange = { fromBlock: from, toBlock: to, paginationSize: 100, count: 0 };
 
     if (!_.isNil(address)) {
       const addresses = (_.isArray(address) ? address : [ address ]);
@@ -363,9 +363,6 @@ class ApiService extends BaseService {
       args.filter.topics = (_.isArray(topics) ? topics : [ topics ]);
 
     const ret = await antenna.iotx.getLogs(args);
-
-    console.log(JSON.stringify(ret));
-
     const logs = ret.logs || [];
     return logs.map(v => ({
       blockHash: '0x0', // TODO

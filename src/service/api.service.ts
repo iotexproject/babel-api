@@ -105,42 +105,7 @@ class ApiService extends BaseService {
     const [ tx ] = params;
     const { to, data, from, value } = tx;
 
-    const toValid = _.size(to) > 0;
-
-    const dst = toValid ? this.fromEth(to) : '';
-    let isContract = true;
-    if (toValid) {
-      const account = await antenna.iotx.getAccount({
-        address: dst
-      });
-      if (!account.accountMeta) {
-        throw new Error(`can't fetch ${to} account info`);
-      }
-      isContract = account.accountMeta.isContract;
-    }
-
-    const amount = numberToBN(value || 0).toString();
-    let src = 'io1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqd39ym7';
-    if (_.size(from) > 0)
-      src = this.fromEth(from);
-
-    const args: any = { callerAddress: src };
-    if (isContract) {
-      args.execution = {
-        amount,
-        contract: dst,
-        data: data.slice(2)
-      };
-    } else {
-      args.transfer = {
-        amount,
-        recipient: dst,
-        payload: data.slice(2)
-      };
-    }
-
-    const { gas } = await antenna.iotx.estimateActionGasConsumption(args);
-    return this.numberToHex(gas);
+    return antenna.iotx.estimateGas({ from, to, value, data });
   }
 
   public async getCode(params: any[]) {

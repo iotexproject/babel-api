@@ -120,21 +120,22 @@ class ApiService extends BaseService {
     }
 
     const amount = numberToBN(value || 0).toString();
+    let src = 'io1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqd39ym7';
+    if (_.size(from) > 0)
+      src = this.fromEth(from);
 
-    const args: any = { callerAddress: this.fromEth(from) };
+    const args: any = { callerAddress: src };
     if (isContract) {
       args.execution = {
         amount,
         contract: dst,
-        data: data.slice(2),
-        externChainID: CHAIN_ID
+        data: data.slice(2)
       };
     } else {
       args.transfer = {
         amount,
         recipient: dst,
-        payload: data.slice(2),
-        externChainID: CHAIN_ID
+        payload: data.slice(2)
       };
     }
 

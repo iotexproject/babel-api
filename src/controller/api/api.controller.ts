@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { Context } from 'koa';
 import BaseController from '../base.controller';
 import { apiService } from '@service/index';
+import { logger } from '@common/utils';
 
 const API_MAP: { [key: string]: string } = {
   ['eth_chainId']: 'getChainId',
@@ -62,7 +63,7 @@ class ApiController extends BaseController {
   public async entry(ctx: Context) {
     const { id, method, params, jsonrpc } = ctx.request.body;
 
-    console.log(`> ${method} ${JSON.stringify(params)}`);
+    logger.info(`> ${method} ${JSON.stringify(params)}`);
 
     const ret = { id, jsonrpc };
     let result;
@@ -74,12 +75,13 @@ class ApiController extends BaseController {
         result = await service[name](params);
       } catch (e) {
         result = { error: e.toString() };
+        logger.error(e.toString());
       }
     }
 
     _.assign(ret, { result });
 
-    console.log(`< ${method}  ${typeof(result) == 'object' ? JSON.stringify(result) : result }`);
+    logger.info(`< ${method}  ${typeof(result) == 'object' ? JSON.stringify(result) : result }`);
 
     return ret;
   }

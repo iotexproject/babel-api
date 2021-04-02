@@ -4,6 +4,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import Antenna from 'iotex-antenna';
 import { fromString, fromBytes } from 'iotex-antenna/lib/crypto/address';
+import { hash160b } from 'iotex-antenna/lib/crypto/hash';
 import { IBlockMeta, IGetLogsRequest } from 'iotex-antenna/lib/rpc-method/types';
 import BaseService from './base.service';
 import { Assert, Exception } from '@common/exceptions';
@@ -200,23 +201,51 @@ class ApiService extends BaseService {
     return this.numberToHex(b?.numActions || 0);
   }
 
-  public async getBlockByNumber(params: any[]) {
-    const [ block_id ] = params;
+  private async getBlockWithTransaction(b: IBlockMeta, detail: boolean) {
+    const { hash } = b;
+    const ret = await antenna.iotx.getActions({
+      byBlk: { blkHash: hash, start: 0, count: 1000 }
+    });
 
-    let bid = block_id;
-    if (block_id == 'latest' || block_id == '0xNaN') {
-      const ret = await antenna.iotx.getChainMeta({});
-      bid = _.get(ret, 'chainMeta.height', 0);
+    const height = this.numberToHex(b.height);
+    const actions = ret.actionInfo || [];
+    let transactions;
+    if (detail) {
+      transactions = actions.map(v => {
+        const { action } = v;
+        const transfer = _.get(action, 'core.transfer');
+        const execution = _.get(action, 'core.execution');
+        let to = _.get(transfer, 'recipient') || _.get(execution, 'contract');
+        if (_.size(to) > 0)
+          to = this.toEth(to);
+
+        const value = this.numberToHex(_.get(transfer || execution, 'amount', 0));
+        let data = _.get(transfer, 'payload') || _.get(execution, 'data');
+        if (!_.isNil(data))
+          data = '0x' + data.toString('hex');
+        else
+          data = '0x';
+          
+        return {
+          hash: '0x' + v.actHash,
+          nonce: this.numberToHex(_.get(action, 'core.nonce', 0)),
+          blockHash: '0x' + v.blkHash,
+          blockNumber: height,
+          transactionIndex: '0x0',
+          from: '0x' + hash160b(v.action.senderPubKey),
+          to,
+          value,
+          gas: this.numberToHex(_.get(action, 'core.gasLimit', 0)),
+          gasPrice: this.numberToHex(_.get(action, 'core.gasPrice', 0)),
+          input: data
+        };
+      });
     } else {
-      bid = numberToBN(block_id).toNumber();
+      transactions = actions.map(v => '0x' + v.actHash);
     }
 
-    const b = await this.blockById(bid);
-    if (!b)
-      return {};
-
     return {
-      number: this.numberToHex(b.height),
+      number: height,
       hash: '0x' + b.hash,
       parentHash: '0x' + (<any>b).previousBlockHash,
       nonce: '0x1',
@@ -232,38 +261,36 @@ class ApiService extends BaseService {
       gasLimit: '0xbebc20',
       gasUsed: '0xbebc20',
       timestamp: this.numberToHex(b.timestamp.seconds),
-      transactions: [],
+      transactions,
       uncles: []
     };
   }
 
+  public async getBlockByNumber(params: any[]) {
+    const [ block_id, detail = false ] = params;
+
+    let bid = block_id;
+    if (block_id == 'latest' || block_id == '0xNaN') {
+      const ret = await antenna.iotx.getChainMeta({});
+      bid = _.get(ret, 'chainMeta.height', 0);
+    } else {
+      bid = numberToBN(block_id).toNumber();
+    }
+
+    const b = await this.blockById(bid);
+    if (!b)
+      return {};
+
+    return this.getBlockWithTransaction(b, detail);
+  }
+
   public async getBlockByHash(params: any) {
-    const [ blkHash ] = params;
+    const [ blkHash, detail = false ] = params;
     const b = await this.blockByHash(blkHash);
     if (!b)
       return {};
 
-    return {
-      number: this.numberToHex(b.height),
-      hash: '0x' + b.hash,
-      parentHash: '0x' + (<any>b).previousBlockHash,
-      nonce: '0x1',
-      sha3Uncles: '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
-      logsBloom: (<any>b).logsBloom,
-      transactionsRoot: '0x' + b.txRoot,
-      stateRoot: '0x' + b.deltaStateDigest,
-      miner: this.toEth(b.producerAddress),
-      difficulty: '21345678965432',
-      totalDifficulty: '324567845321',
-      size: this.numberToHex(b.numActions),
-      extraData: '0x',
-      gasLimit: '0x10000',
-      gasUsed: '0x1',
-      timestamp: this.numberToHex(b.timestamp.seconds),
-      transactions: [],
-      uncles: []
-    };
-
+    return this.getBlockWithTransaction(b, detail);
   }
 
   private async transaction(ret: any) {

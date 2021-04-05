@@ -7,6 +7,9 @@ This document describes how to deploy and supported/unsupported APIs.
 Other tools/environment integrate guide please refer to below,
 
 * [Truffle](./doc/truffle.md)
+* [Metamask](./doc/metamask.md)
+* [Remix](./doc/remix.md)
+* [Subgraph](./doc/subgraph.md)
 
 ## 1. Deploy
 

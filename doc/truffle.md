@@ -1,6 +1,6 @@
 # Truffle Integrate Guide
 
-How to use truffle, please refer to [The official truffle document](https://www.trufflesuite.com/docs/truffle)
+How to use truffle, please refer to [the official truffle document](https://www.trufflesuite.com/docs/truffle)
 
 This guide only describes how to configure truffle so that you could development and deploy contracts on IOTEX network.
 

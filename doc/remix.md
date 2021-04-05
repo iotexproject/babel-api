@@ -7,4 +7,4 @@ Since remix could work base on metamask, you should configure metamask correctly
 Let's assume that you have set up metamask successfully.
 
 ## Choose ENVIRONMENT
-![avatar](./remid.png)
+![avatar](https://github.com/iotexproject/babel-api/raw/main/doc/remix.png)

@@ -2,6 +2,15 @@
 
 ## 0. Overview
 
+This document describes how to deploy and supported/unsupported APIs.
+
+Other tools/environment integrate guide please refer to below,
+
+* [Truffle](./doc/truffle.md)
+* [Metamask](./doc/metamask.md)
+* [Remix](./doc/remix.md)
+* [Subgraph](./doc/subgraph.md)
+
 ## 1. Deploy
 
 ### 1.1 Environment
@@ -59,6 +68,7 @@ eth_getBlockByHash
 eth_getTransactionByHash
 eth_getTransactionByBlockHashAndIndex
 eth_getTransactionByBlockNumberAndIndex
+eth_getLogs
 ```
 
 ## 3. Unsupported API
@@ -87,7 +97,6 @@ eth_newPendingTransactionFilter
 eth_uninstallFilter
 eth_getFilterChanges
 eth_getFilterLogs
-eth_getLogs
 eth_getWork
 eth_submitWork
 eth_submitHashrate

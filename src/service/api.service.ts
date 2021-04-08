@@ -100,7 +100,7 @@ class ApiService extends BaseService {
       callerAddress: address
     });
 
-    return ret;
+    return '0x' + ret;
   }
 
   public async estimateGas(params: any[]) {

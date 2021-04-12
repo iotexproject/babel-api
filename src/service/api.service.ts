@@ -1,7 +1,6 @@
 var BN = require('bn.js');
 var numberToBN = require('number-to-bn');
 import _ from 'lodash';
-import moment from 'moment';
 import Antenna from 'iotex-antenna';
 import { fromString, fromBytes } from 'iotex-antenna/lib/crypto/address';
 import { hash160b } from 'iotex-antenna/lib/crypto/hash';
@@ -9,11 +8,9 @@ import { IBlockMeta, IGetLogsRequest } from 'iotex-antenna/lib/rpc-method/types'
 import BaseService from './base.service';
 import { Assert, Exception } from '@common/exceptions';
 import { Code } from '@common/enums';
+import { END_POINT, CHAIN_ID } from '@config/env';
 
-//const antenna = new Antenna("https://api.iotex.one:443");
-const antenna = new Antenna("https://api.nightly-cluster-2.iotex.one:443");
-
-const CHAIN_ID = 4689;
+const antenna = new Antenna(END_POINT);
 
 class ApiService extends BaseService {
 

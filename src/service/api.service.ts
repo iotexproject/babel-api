@@ -62,7 +62,7 @@ class ApiService extends BaseService {
 
   public async gasPrice(params: any) {
     const { gasPrice } = await antenna.iotx.suggestGasPrice({});
-    return gasPrice;
+    return this.numberToHex(gasPrice);
   }
 
   public async getTransactionCount(params: any[]) {
@@ -104,7 +104,8 @@ class ApiService extends BaseService {
     const [ tx ] = params;
     const { to, data, from, value } = tx;
 
-    return antenna.iotx.estimateGas({ from, to, value, data });
+    const ret = await antenna.iotx.estimateGas({ from, to, value, data });
+    return this.numberToHex(ret);
   }
 
   public async getCode(params: any[]) {

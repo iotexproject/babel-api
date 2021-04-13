@@ -113,7 +113,7 @@ class ApiService extends BaseService {
   }
 
   public async getNetworkId(params: any) {
-    return "4689";
+    return `${CHAIN_ID}`;
   }
 
   public async getPeers(params: any) {

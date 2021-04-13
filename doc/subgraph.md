@@ -6,7 +6,7 @@ How to use Subgraph, please refer to [the official Subgraph document](https://th
 
 Since subgraph works base on truffle, you should configure truffle first, refer to [truffle integrate guide](./truffle.md).
 
-Let's assume that the server is deploy on HOST=http://babal-api.iotex.io:8545
+Let's assume that the server is deploy on HOST=https://babel-api.mainnet.iotex.io:8545
 
 Before deploying graph-node, please modify 'graph-node/docker/docker-compose.yml' as below,
 
@@ -14,5 +14,5 @@ Before deploying graph-node, please modify 'graph-node/docker/docker-compose.yml
 services:
   graph-node:
     environment:
-      ethereum: 'mainnet:http://babal-api.iotex.io:8545'
+      ethereum: 'mainnet:http://babel-api.mainnet.iotex.io:8545'
 ```

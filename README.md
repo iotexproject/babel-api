@@ -4,6 +4,14 @@
 
 This document describes how to deploy and supported/unsupported APIs.
 
+The service would be deployed as below,
+* Mainnet
+  - Host: http://babel-api.mainnet.iotex.io:8545
+  - Chain ID: 4689
+* Testnet
+  - Host: http://babel-api.testnet.iotex.io:8545
+  - Chain ID: 4690
+
 Other tools/environment integrate guide please refer to below,
 
 * [Truffle](./doc/truffle.md)
@@ -25,7 +33,9 @@ sudo yum install nodejs
 ### 1.3. Configuration file
 create xxx/.env
 ```
-PORT=9000
+PORT=8545
+CHAIN_ID=4689
+END_POINT=https://api.iotex.one:443
 ```
 
 ### 1.4. Install Node Libraries

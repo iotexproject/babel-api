@@ -4,7 +4,7 @@ How to use truffle, please refer to [the official truffle document](https://www.
 
 This guide only describes how to configure truffle so that you could development and deploy contracts on IOTEX network.
 
-Let's assume that the server is deploy on HOST=http://babal-api.iotex.io:8545 and you had already created a truffle project.
+Let's assume that the server is deploy on HOST=http://babel-api.mainnet.iotex.io:8545 and you had already created a truffle project.
 
 ## 1. Install Package
 [@truffle/hdwallet-provider](https://www.npmjs.com/package/@truffle/hdwallet-provider)
@@ -32,9 +32,12 @@ module.exports = {
             phrase: MNEMONIC,
           },
           providerOrUrl: `${HOST}`,
-          shareNonce: true,
+          shareNonce: true
         }),
       network_id: 4689,    // IOTEX mainnet chain id 4689
+      gas: 8500000,
+      gasPrice: 1000000000000,
+      skipDryRun: true
     }
   }
 }
@@ -55,6 +58,9 @@ module.exports = {
     dev: {
       provider: () => new HDWalletProvider(privateKeys, `${HOST}`, 0, 2),
       network_id: 4689,    // IOTEX mainnet chain id 4689
+      gas: 8500000,
+      gasPrice: 1000000000000,
+      skipDryRun: true
     }
   }
 }

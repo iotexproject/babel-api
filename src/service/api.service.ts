@@ -128,7 +128,7 @@ class ApiService extends BaseService {
     const ret = await antenna.iotx.getReceiptByAction({ actionHash: hash });
     const { receiptInfo } = ret;
     const { receipt, blkHash } = receiptInfo || {};
-    const { status, blkHeight, actHash, gasConsumed, contractAddress, logs } = receipt || {};
+    const { status, blkHeight, actHash, gasConsumed, contractAddress, logs = [] } = receipt || {};
 
     const height = this.numberToHex(blkHeight || 0);
 

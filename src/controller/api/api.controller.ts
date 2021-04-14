@@ -41,10 +41,6 @@ const API_MAP: { [key: string]: string } = {
   ['eth_getTransactionByBlockNumberAndIndex']: 'getTransactionByBlockNumberAndIndex',
   ['eth_getUncleByBlockHashAndIndex']: 'notImplememted',
   ['eth_getUncleByBlockNumberAndIndex']: 'notImplememted',
-  ['eth_getCompilers']: 'notImplememted',
-  ['eth_compileLLL']: 'notImplememted',
-  ['eth_compileSolidity']: 'notImplememted',
-  ['eth_compileSerpent']: 'notImplememted',
   ['eth_newFilter']: 'notImplememted',
   ['eth_newBlockFilter']: 'notImplememted',
   ['eth_newPendingTransactionFilter']: 'notImplememted',
@@ -77,11 +73,13 @@ class ApiController extends BaseController {
         result = { error: e.toString() };
         logger.error(e.toString());
       }
+
+      logger.info(`< ${method}  ${typeof(result) == 'object' ? JSON.stringify(result) : result }`);
+    } else {
+      logger.warn(`unsupported method: ${method} ${JSON.stringify(params)}`);
     }
 
     _.assign(ret, { result });
-
-    logger.info(`< ${method}  ${typeof(result) == 'object' ? JSON.stringify(result) : result }`);
 
     return ret;
   }

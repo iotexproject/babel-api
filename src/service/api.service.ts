@@ -130,13 +130,23 @@ class ApiService extends BaseService {
     const { receipt, blkHash } = receiptInfo || {};
     const { status, blkHeight, actHash, gasConsumed, contractAddress, logs } = receipt || {};
 
+    const height = this.numberToHex(blkHeight || 0);
+
     return {
-      blockNumber: this.numberToHex(blkHeight || 0),
+      blockNumber: height,
       blockHash: blkHash,
-      transactionHash: actHash?.toString('hex'),
+      transactionHash: '0x' + hash,
       cumulativeGasUsed: this.numberToHex(gasConsumed || 0),
       gasUsed: this.numberToHex(gasConsumed || 0),
-      logs: [],
+      logs: logs.map(v => ({
+        blockHash: '0x' + blkHash,
+        transactionHash: '0x' + hash,
+        logIndex: this.numberToHex(v.index),
+        blockNumber: this.numberToHex(v.blkHeight),
+        address: this.toEth(v.contractAddress),
+        data: '0x' + v.data.toString('hex'),
+        topics: v.topics.map(v => '0x' + v.toString('hex'))
+      })),
       contractAddress: (contractAddress == '' ? contractAddress : this.toEth(contractAddress || '')),
       status: (status == 1 ? 1 : 0)
     };

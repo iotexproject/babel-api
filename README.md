@@ -97,10 +97,6 @@ eth_signTransaction
 eth_sendTransaction
 eth_getUncleByBlockHashAndIndex
 eth_getUncleByBlockNumberAndIndex
-eth_getCompilers
-eth_compileLLL
-eth_compileSolidity
-eth_compileSerpent
 eth_newFilter
 eth_newBlockFilter
 eth_newPendingTransactionFilter

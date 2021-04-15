@@ -84,6 +84,10 @@ class ApiController extends BaseController {
     return ret;
   }
 
+  public ping(ctx: Context) {
+    return 'pong';
+  }
+
 }
 
 export const apiController = new ApiController();

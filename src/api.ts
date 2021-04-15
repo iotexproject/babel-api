@@ -10,6 +10,7 @@ import { handleRouter } from './helpers/http';
 import { logger as reqLogger, cors, body, realIp } from '@middlewares/index';
 import { PORT } from '@config/env';
 import apiRoutes from '@routes/api.routes';
+import healthRoutes from '@routes/health.routes';
 
 const app = new Koa();
 
@@ -23,7 +24,7 @@ app.use(body());
 
 app.use(cors());
 
-app.use(handleRouter([ ...apiRoutes ], 'api').routes());
+app.use(handleRouter([ ...apiRoutes, ...healthRoutes ], 'api').routes());
 
 const server = http.createServer(app.callback());
 server.keepAliveTimeout = 120 * 1000;

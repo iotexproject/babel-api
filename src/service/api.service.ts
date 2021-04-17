@@ -337,7 +337,8 @@ class ApiService extends BaseService {
   }
 
   public async getTransactionByHash(params: any) {
-    const [ hash ] = params;
+    let [ hash ] = params;
+    if (_.startsWith(hash, '0x')) hash = hash.slice(2);
     const ret = await antenna.iotx.getActions({ byHash: { actionHash: hash, checkingPending: true } });
     return this.transaction(ret);
   }

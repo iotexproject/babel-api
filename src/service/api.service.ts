@@ -141,7 +141,7 @@ class ApiService extends BaseService {
     const { receipt, blkHash } = receiptInfo || {};
     const { status, blkHeight, actHash, gasConsumed, contractAddress, logs = [] } = receipt || {};
 
-    const height = numberToHex(blkHeight || 0);
+    const height = blkHeight || 0;
 
     return {
       blockNumber: height,
@@ -152,8 +152,8 @@ class ApiService extends BaseService {
       logs: logs.map(v => ({
         blockHash: '0x' + blkHash,
         transactionHash: '0x' + hash,
-        logIndex: numberToHex(v.index),
-        blockNumber: numberToHex(v.blkHeight),
+        logIndex: v.index,
+        blockNumber: v.blkHeight,
         address: toEth(v.contractAddress),
         data: '0x' + v.data.toString('hex'),
         topics: v.topics.map(v => '0x' + v.toString('hex'))
@@ -212,12 +212,12 @@ class ApiService extends BaseService {
 
   public async getBlockTransactionCountByHash(params: any) {
     const b = await this.blockByHash(removePrefix(params[0]));
-    return numberToHex(b?.numActions || 0);
+    return b?.numActions || 0;
   }
 
   public async getBlockTransactionCountByNumber(params: any) {
     const b = await this.blockById(params[0]);
-    return numberToHex(b?.numActions || 0);
+    return b?.numActions || 0;
   }
 
   private async getBlockWithTransaction(b: IBlockMeta, detail: boolean) {
@@ -226,7 +226,7 @@ class ApiService extends BaseService {
       byBlk: { blkHash: hash, start: 0, count: 1000 }
     });
 
-    const height = numberToHex(b.height);
+    const height = b.height;
     const actions = ret.actionInfo || [];
     let transactions;
     if (detail) {
@@ -247,14 +247,14 @@ class ApiService extends BaseService {
           
         return {
           hash: '0x' + v.actHash,
-          nonce: numberToHex(_.get(action, 'core.nonce', 0)),
+          nonce: _.get(action, 'core.nonce', 0),
           blockHash: '0x' + v.blkHash,
           blockNumber: height,
-          transactionIndex: 0,
+          transactionIndex: 1,
           from: '0x' + hash160b(v.action.senderPubKey),
           to,
           value,
-          gas: numberToHex(_.get(action, 'core.gasLimit', 0)),
+          gas: _.get(action, 'core.gasLimit', 0),
           gasPrice: numberToHex(_.get(action, 'core.gasPrice', 0)),
           input: data
         };
@@ -275,10 +275,10 @@ class ApiService extends BaseService {
       miner: toEth(b.producerAddress),
       difficulty: '21345678965432',
       totalDifficulty: '324567845321',
-      size: numberToHex(b.numActions),
+      size: b.numActions,
       extraData: '0x',
-      gasLimit: numberToHex(b.gasLimit),
-      gasUsed: numberToHex(b.gasUsed),
+      gasLimit: b.gasLimit,
+      gasUsed: b.gasUsed,
       timestamp: numberToHex(b.timestamp.seconds),
       transactions,
       uncles: []
@@ -338,7 +338,7 @@ class ApiService extends BaseService {
       blockNumber: blkHeight,
       transactionIndex: index,
       nonce: nonce,
-      gas: numberToHex(gasLimit),
+      gas: gasLimit,
       gasPrice: numberToHex(gasPrice),
       value,
       to,
@@ -424,9 +424,9 @@ class ApiService extends BaseService {
     return logs.map(v => ({
       blockHash: '0x' + v.blkHash.toString('hex'),
       transactionHash: '0x' + v.actHash.toString('hex'),
-      logIndex: numberToHex(v.index),
-      blockNumber: numberToHex(v.blkHeight),
-      transactionIndex: 0,
+      logIndex: v.index,
+      blockNumber: v.blkHeight,
+      transactionIndex: 1,
       address: toEth(v.contractAddress),
       data: '0x' + v.data.toString('hex'),
       topics: v.topics.map(v => '0x' + v.toString('hex'))

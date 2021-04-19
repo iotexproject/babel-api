@@ -114,7 +114,8 @@ class ApiService extends BaseService {
 
   public async getCode(params: any[]) {
     const [ address, block_id ] = params;
-    return '0x0';
+    const ret = await antenna.iotx.getAccount({ address: fromEth(address) });
+    return '0x' + _.get(ret, 'accountMeta.contractByteCode', '0');
   }
 
   public async getNetworkId(params: any) {
@@ -270,8 +271,8 @@ class ApiService extends BaseService {
       totalDifficulty: '324567845321',
       size: numberToHex(b.numActions),
       extraData: '0x',
-      gasLimit: '0xbebc20',
-      gasUsed: '0xbebc20',
+      gasLimit: b.gasLimit,
+      gasUsed: b.gasUsed,
       timestamp: numberToHex(b.timestamp.seconds),
       transactions,
       uncles: []
@@ -307,7 +308,7 @@ class ApiService extends BaseService {
 
   private async transaction(ret: any) {
     const { actionInfo } = ret;
-    const { action, actHash, blkHash, blkHeight, sender, gasFee, timestamp } = actionInfo[0];
+    const { action, actHash, blkHash, blkHeight, sender, index } = actionInfo[0];
     const { core, senderPubKey, signature } = action;
     const { nonce, gasLimit, gasPrice, transfer, execution } = core;
 
@@ -329,7 +330,7 @@ class ApiService extends BaseService {
       hash: `0x${actHash}`,
       blockHash: `0x${blkHash}`,
       blockNumber: numberToHex(blkHeight),
-      transactionIndex: '0x0', // TODO
+      transactionIndex: index,
       nonce: numberToHex(nonce),
       gas: numberToHex(gasLimit),
       gasPrice: numberToHex(gasPrice),
@@ -403,11 +404,11 @@ class ApiService extends BaseService {
     const ret = await antenna.iotx.getLogs(args);
     const logs = ret.logs || [];
     return logs.map(v => ({
-      blockHash: '0x0', // TODO
+      blockHash: '0x' + v.blkHash.toString('hex'),
       transactionHash: '0x' + v.actHash.toString('hex'),
       logIndex: numberToHex(v.index),
       blockNumber: numberToHex(v.blkHeight),
-      transactionIndex: '0x0', // TODO
+      transactionIndex: '0x0',
       address: toEth(v.contractAddress),
       data: '0x' + v.data.toString('hex'),
       topics: v.topics.map(v => '0x' + v.toString('hex'))

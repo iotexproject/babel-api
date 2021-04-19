@@ -250,7 +250,7 @@ class ApiService extends BaseService {
           nonce: numberToHex(_.get(action, 'core.nonce', 0)),
           blockHash: '0x' + v.blkHash,
           blockNumber: height,
-          transactionIndex: '0x0',
+          transactionIndex: 0,
           from: '0x' + hash160b(v.action.senderPubKey),
           to,
           value,
@@ -319,7 +319,7 @@ class ApiService extends BaseService {
     const { nonce, gasLimit, gasPrice, transfer, execution } = core;
 
     let value = '0x0';
-    let to = '';
+    let to;
     let data = '';
     if (transfer != null) {
       const { amount, recipient } = transfer;
@@ -328,16 +328,16 @@ class ApiService extends BaseService {
     } else if (execution != null) {
       const { amount, contract, data: d } = execution;
       value = numberToHex(amount);
-      to = _.size(contract) > 0 ? toEth(contract) : '';
+      to = _.size(contract) > 0 ? toEth(contract) : null;
       data = `0x${d.toString('hex')}`;
     }
 
     return {
       hash: `0x${actHash}`,
       blockHash: `0x${blkHash}`,
-      blockNumber: numberToHex(blkHeight),
-      transactionIndex: numberToHex(index),
-      nonce: numberToHex(nonce),
+      blockNumber: blkHeight,
+      transactionIndex: index,
+      nonce: nonce,
       gas: numberToHex(gasLimit),
       gasPrice: numberToHex(gasPrice),
       value,
@@ -426,7 +426,7 @@ class ApiService extends BaseService {
       transactionHash: '0x' + v.actHash.toString('hex'),
       logIndex: numberToHex(v.index),
       blockNumber: numberToHex(v.blkHeight),
-      transactionIndex: '0x0',
+      transactionIndex: 0,
       address: toEth(v.contractAddress),
       data: '0x' + v.data.toString('hex'),
       topics: v.topics.map(v => '0x' + v.toString('hex'))

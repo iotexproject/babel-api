@@ -79,7 +79,7 @@ class ApiService extends BaseService {
   public async sendRawTransaction(params: any[]) {
     const [ data ] = params;
     const ret = await antenna.iotx.sendRawTransaction({ chainID: CHAIN_ID, data });
-    return ret;
+    return '0x' + ret;
   }
 
   public async call(params: any[]) {
@@ -312,7 +312,7 @@ class ApiService extends BaseService {
     return this.getBlockWithTransaction(b, detail);
   }
 
-  private async transaction(ret: any) {
+  private transaction(ret: any) {
     const { actionInfo } = ret;
     const { action, actHash, blkHash, blkHeight, sender, index } = actionInfo[0];
     const { core, senderPubKey, signature } = action;
@@ -348,14 +348,22 @@ class ApiService extends BaseService {
   }
 
   public async getTransactionByHash(params: any) {
-    const ret = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkingPending: true } });
-    return this.transaction(ret);
+    try {
+      const ret = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkingPending: true } });
+      return this.transaction(ret);
+    } catch (e) {
+      return null;
+    }
   }
 
   public async getTransactionByBlockHashAndIndex(params: any) {
     const [ blkHash, id ] = params;
-    const ret = await antenna.iotx.getActions({ byBlk: { blkHash: removePrefix(blkHash), start: id, count: 1 } });
-    return this.transaction(ret);
+    try {
+      const ret = await antenna.iotx.getActions({ byBlk: { blkHash: removePrefix(blkHash), start: id, count: 1 } });
+      return this.transaction(ret);
+    } catch (e) {
+      return null;
+    }
   }
 
   public async getTransactionByBlockNumberAndIndex(params: any) {
@@ -364,8 +372,12 @@ class ApiService extends BaseService {
     if (!b)
       return {};
 
-    const ret = await antenna.iotx.getActions({ byBlk: { blkHash: b.hash, start: id, count: 1 } });
-    return this.transaction(ret);
+    try {
+      const ret = await antenna.iotx.getActions({ byBlk: { blkHash: b.hash, start: id, count: 1 } });
+      return this.transaction(ret);
+    } catch (e) {
+      return null;
+    }
   }
 
   public async getPendingTransactions(params: any) {

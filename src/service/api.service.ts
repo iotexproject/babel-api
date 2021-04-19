@@ -37,7 +37,7 @@ function toBN(v: number | string) {
 function numberToHex(v: number | string) {
   const n = toBN(v);
   const result = n.toString(16);
-  return n.lt(new BN(0)) ? '-0x' + result.substr(1) : '0x' + result;
+  return n.lt(new BN(0)) ? ('-0x' + result.substr(1)) : ('0x' + result);
 } 
 
 class ApiService extends BaseService {

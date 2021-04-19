@@ -115,7 +115,7 @@ class ApiService extends BaseService {
   public async getCode(params: any[]) {
     const [ address, block_id ] = params;
     const ret = await antenna.iotx.getAccount({ address: fromEth(address) });
-    return '0x' + _.get(ret, 'accountMeta.contractByteCode', '0');
+    return _.get(ret, 'accountMeta.contractByteCode').toString('hex');
   }
 
   public async getNetworkId(params: any) {
@@ -130,7 +130,13 @@ class ApiService extends BaseService {
     const [ h ] = params;
     const hash = removePrefix(h);
 
-    const ret = await antenna.iotx.getReceiptByAction({ actionHash: hash });
+    let ret;
+    try {
+      ret = await antenna.iotx.getReceiptByAction({ actionHash: hash });
+    } catch (e) {
+      return null;
+    }
+
     const { receiptInfo } = ret;
     const { receipt, blkHash } = receiptInfo || {};
     const { status, blkHeight, actHash, gasConsumed, contractAddress, logs = [] } = receipt || {};
@@ -271,8 +277,8 @@ class ApiService extends BaseService {
       totalDifficulty: '324567845321',
       size: numberToHex(b.numActions),
       extraData: '0x',
-      gasLimit: b.gasLimit,
-      gasUsed: b.gasUsed,
+      gasLimit: numberToHex(b.gasLimit),
+      gasUsed: numberToHex(b.gasUsed),
       timestamp: numberToHex(b.timestamp.seconds),
       transactions,
       uncles: []
@@ -330,7 +336,7 @@ class ApiService extends BaseService {
       hash: `0x${actHash}`,
       blockHash: `0x${blkHash}`,
       blockNumber: numberToHex(blkHeight),
-      transactionIndex: index,
+      transactionIndex: numberToHex(index),
       nonce: numberToHex(nonce),
       gas: numberToHex(gasLimit),
       gasPrice: numberToHex(gasPrice),

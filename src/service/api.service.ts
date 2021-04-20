@@ -6,7 +6,7 @@ import { fromString, fromBytes } from 'iotex-antenna/lib/crypto/address';
 import { hash160b } from 'iotex-antenna/lib/crypto/hash';
 import { IBlockMeta, IGetLogsRequest } from 'iotex-antenna/lib/rpc-method/types';
 import BaseService from './base.service';
-import { Assert, Exception } from '@common/exceptions';
+import { Exception } from '@common/exceptions';
 import { Code } from '@common/enums';
 import { END_POINT, CHAIN_ID } from '@config/env';
 
@@ -39,6 +39,14 @@ function numberToHex(v: number | string) {
   const result = n.toString(16);
   return n.lt(new BN(0)) ? '-0x' + result.substr(1) : '0x' + result;
 } 
+
+function toString(v: number | string) {
+  return toBN(v).toString(16);
+}
+
+function toNumber(v: number | string) {
+  return toBN(v).toNumber();
+}
 
 class ApiService extends BaseService {
 
@@ -79,7 +87,7 @@ class ApiService extends BaseService {
   public async sendRawTransaction(params: any[]) {
     const [ data ] = params;
     const ret = await antenna.iotx.sendRawTransaction({ chainID: CHAIN_ID, data });
-    return ret;
+    return '0x' + ret;
   }
 
   public async call(params: any[]) {
@@ -141,25 +149,36 @@ class ApiService extends BaseService {
     const { receipt, blkHash } = receiptInfo || {};
     const { status, blkHeight, actHash, gasConsumed, contractAddress, logs = [] } = receipt || {};
 
-    const height = numberToHex(blkHeight || 0);
+    const height = toNumber(blkHeight || 0);
+
+    let transaction;
+    try {
+      const action = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkingPending: true } });
+      transaction = this.transaction(action);
+    } catch (e) {
+      return null;
+    }
 
     return {
       blockNumber: height,
-      blockHash: blkHash,
+      blockHash: '0x' + blkHash,
       transactionHash: '0x' + hash,
-      cumulativeGasUsed: numberToHex(gasConsumed || 0),
-      gasUsed: numberToHex(gasConsumed || 0),
+      transactionIndex: 1,
+      cumulativeGasUsed: toNumber(gasConsumed || 0),
+      gasUsed: toNumber(gasConsumed || 0),
       logs: logs.map(v => ({
         blockHash: '0x' + blkHash,
         transactionHash: '0x' + hash,
-        logIndex: numberToHex(v.index),
-        blockNumber: numberToHex(v.blkHeight),
+        logIndex: toNumber(v.index),
+        blockNumber: toNumber(v.blkHeight),
         address: toEth(v.contractAddress),
         data: '0x' + v.data.toString('hex'),
         topics: v.topics.map(v => '0x' + v.toString('hex'))
       })),
-      contractAddress: (contractAddress == '' ? contractAddress : toEth(contractAddress || '')),
-      status: (status == 1 ? 1 : 0)
+      contractAddress: (_.size(contractAddress) > 0  ? toEth(contractAddress || '') : null),
+      status: (status == 1 ? 1 : 0),
+      from: transaction.from,
+      to: transaction.to
     };
   }
 
@@ -212,12 +231,12 @@ class ApiService extends BaseService {
 
   public async getBlockTransactionCountByHash(params: any) {
     const b = await this.blockByHash(removePrefix(params[0]));
-    return numberToHex(b?.numActions || 0);
+    return toNumber(b?.numActions || 0);
   }
 
   public async getBlockTransactionCountByNumber(params: any) {
     const b = await this.blockById(params[0]);
-    return numberToHex(b?.numActions || 0);
+    return toNumber(b?.numActions || 0);
   }
 
   private async getBlockWithTransaction(b: IBlockMeta, detail: boolean) {
@@ -226,7 +245,7 @@ class ApiService extends BaseService {
       byBlk: { blkHash: hash, start: 0, count: 1000 }
     });
 
-    const height = numberToHex(b.height);
+    const height = toNumber(b.height);
     const actions = ret.actionInfo || [];
     let transactions;
     if (detail) {
@@ -247,14 +266,14 @@ class ApiService extends BaseService {
           
         return {
           hash: '0x' + v.actHash,
-          nonce: numberToHex(_.get(action, 'core.nonce', 0)),
+          nonce: toNumber(_.get(action, 'core.nonce', 0)),
           blockHash: '0x' + v.blkHash,
           blockNumber: height,
-          transactionIndex: '0x0',
+          transactionIndex: 1,
           from: '0x' + hash160b(v.action.senderPubKey),
           to,
           value,
-          gas: numberToHex(_.get(action, 'core.gasLimit', 0)),
+          gas: toNumber(_.get(action, 'core.gasLimit', 0)),
           gasPrice: numberToHex(_.get(action, 'core.gasPrice', 0)),
           input: data
         };
@@ -267,7 +286,7 @@ class ApiService extends BaseService {
       number: height,
       hash: '0x' + b.hash,
       parentHash: '0x' + (<any>b).previousBlockHash,
-      nonce: '0x1',
+      nonce: 1,
       sha3Uncles: '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
       logsBloom: (<any>b).logsBloom,
       transactionsRoot: '0x' + b.txRoot,
@@ -275,9 +294,9 @@ class ApiService extends BaseService {
       miner: toEth(b.producerAddress),
       difficulty: '21345678965432',
       totalDifficulty: '324567845321',
-      size: numberToHex(b.numActions),
+      size: toNumber(b.numActions),
       extraData: '0x',
-      gasLimit: numberToHex(b.gasLimit),
+      gasLimit: toNumber(b.gasLimit),
       gasUsed: numberToHex(b.gasUsed),
       timestamp: numberToHex(b.timestamp.seconds),
       transactions,
@@ -291,9 +310,9 @@ class ApiService extends BaseService {
     let bid = block_id;
     if (block_id == 'latest' || block_id == '0xNaN') {
       const ret = await antenna.iotx.getChainMeta({});
-      bid = _.get(ret, 'chainMeta.height', 0);
+      bid = toNumber(_.get(ret, 'chainMeta.height', 0));
     } else {
-      bid = numberToBN(block_id).toNumber();
+      bid = toNumber(block_id);
     }
 
     const b = await this.blockById(bid);
@@ -312,14 +331,14 @@ class ApiService extends BaseService {
     return this.getBlockWithTransaction(b, detail);
   }
 
-  private async transaction(ret: any) {
+  private transaction(ret: any) {
     const { actionInfo } = ret;
     const { action, actHash, blkHash, blkHeight, sender, index } = actionInfo[0];
     const { core, senderPubKey, signature } = action;
     const { nonce, gasLimit, gasPrice, transfer, execution } = core;
 
     let value = '0x0';
-    let to = '';
+    let to;
     let data = '';
     if (transfer != null) {
       const { amount, recipient } = transfer;
@@ -328,17 +347,17 @@ class ApiService extends BaseService {
     } else if (execution != null) {
       const { amount, contract, data: d } = execution;
       value = numberToHex(amount);
-      to = _.size(contract) > 0 ? toEth(contract) : '';
+      to = _.size(contract) > 0 ? toEth(contract) : null;
       data = `0x${d.toString('hex')}`;
     }
 
     return {
       hash: `0x${actHash}`,
       blockHash: `0x${blkHash}`,
-      blockNumber: numberToHex(blkHeight),
-      transactionIndex: numberToHex(index),
-      nonce: numberToHex(nonce),
-      gas: numberToHex(gasLimit),
+      blockNumber: toNumber(blkHeight),
+      transactionIndex: toNumber(index),
+      nonce: toNumber(nonce),
+      gas: toNumber(gasLimit),
       gasPrice: numberToHex(gasPrice),
       value,
       to,
@@ -348,14 +367,22 @@ class ApiService extends BaseService {
   }
 
   public async getTransactionByHash(params: any) {
-    const ret = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkingPending: true } });
-    return this.transaction(ret);
+    try {
+      const ret = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkingPending: true } });
+      return this.transaction(ret);
+    } catch (e) {
+      return null;
+    }
   }
 
   public async getTransactionByBlockHashAndIndex(params: any) {
     const [ blkHash, id ] = params;
-    const ret = await antenna.iotx.getActions({ byBlk: { blkHash: removePrefix(blkHash), start: id, count: 1 } });
-    return this.transaction(ret);
+    try {
+      const ret = await antenna.iotx.getActions({ byBlk: { blkHash: removePrefix(blkHash), start: id, count: 1 } });
+      return this.transaction(ret);
+    } catch (e) {
+      return null;
+    }
   }
 
   public async getTransactionByBlockNumberAndIndex(params: any) {
@@ -364,8 +391,12 @@ class ApiService extends BaseService {
     if (!b)
       return {};
 
-    const ret = await antenna.iotx.getActions({ byBlk: { blkHash: b.hash, start: id, count: 1 } });
-    return this.transaction(ret);
+    try {
+      const ret = await antenna.iotx.getActions({ byBlk: { blkHash: b.hash, start: id, count: 1 } });
+      return this.transaction(ret);
+    } catch (e) {
+      return null;
+    }
   }
 
   public async getPendingTransactions(params: any) {
@@ -375,7 +406,6 @@ class ApiService extends BaseService {
   public async getLogs(params: any) {
     const { fromBlock, toBlock, topics, address } = params[0];
     
-    const self = this;
     const args: IGetLogsRequest = { filter: { address: [], topics: [] } };
     const predefined = [ 'latest', 'pending' ];
     let from = 0;
@@ -383,7 +413,7 @@ class ApiService extends BaseService {
 
     if (predefined.includes(fromBlock) || predefined.includes(toBlock)) {
       const meta = await antenna.iotx.getChainMeta({});
-      const height = _.get(meta, 'chainMeta.height', 0);
+      const height = toNumber(_.get(meta, 'chainMeta.height', 0));
       if (predefined.includes(fromBlock))
         from = height;
       if (predefined.includes(toBlock))
@@ -391,10 +421,10 @@ class ApiService extends BaseService {
     }
     
     if (typeof(fromBlock) == 'string' && fromBlock.startsWith('0x'))
-      from = numberToBN(fromBlock).toNumber();
+      from = toNumber(fromBlock);
 
     if (typeof(toBlock) == 'string' && toBlock.startsWith('0x'))
-      to = numberToBN(toBlock).toNumber();
+      to = toNumber(toBlock);
 
     if (from > 0 || to > 0)
       args.byRange = { fromBlock: from, toBlock: to, paginationSize: 100, count: 0 };
@@ -412,9 +442,9 @@ class ApiService extends BaseService {
     return logs.map(v => ({
       blockHash: '0x' + v.blkHash.toString('hex'),
       transactionHash: '0x' + v.actHash.toString('hex'),
-      logIndex: numberToHex(v.index),
-      blockNumber: numberToHex(v.blkHeight),
-      transactionIndex: '0x0',
+      logIndex: toNumber(v.index),
+      blockNumber: toNumber(v.blkHeight),
+      transactionIndex: 1,
       address: toEth(v.contractAddress),
       data: '0x' + v.data.toString('hex'),
       topics: v.topics.map(v => '0x' + v.toString('hex'))

@@ -1,6 +1,6 @@
 # Metamask Integrate Guide
 
-Let's assume that the server is deploy on HOST=http://babel-api.mainnet.iotex.io:8545
+Let's assume that the server is deploy on HOST=http://babel-api.mainnet.iotex.io
 
 ## 1. Open metamask
 ## 2. Open "Networks" menu, and choose "Custom RPC" button

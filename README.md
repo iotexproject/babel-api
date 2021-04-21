@@ -6,10 +6,10 @@ This document describes how to deploy and supported/unsupported APIs.
 
 The service would be deployed as below,
 * Mainnet
-  - Host: http://babel-api.mainnet.iotex.io:8545
+  - Host: http://babel-api.mainnet.iotex.io
   - Chain ID: 4689
 * Testnet
-  - Host: http://babel-api.testnet.iotex.io:8545
+  - Host: http://babel-api.testnet.iotex.io
   - Chain ID: 4690
 
 Other tools/environment integrate guide please refer to below,
@@ -18,6 +18,7 @@ Other tools/environment integrate guide please refer to below,
 * [Metamask](./doc/metamask.md)
 * [Remix](./doc/remix.md)
 * [Subgraph](./doc/subgraph.md)
+* [Hardhat](./doc/hardhat.md)
 
 ## 1. Deploy
 

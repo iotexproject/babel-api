@@ -123,7 +123,7 @@ class ApiService extends BaseService {
   public async getCode(params: any[]) {
     const [ address, block_id ] = params;
     const ret = await antenna.iotx.getAccount({ address: fromEth(address) });
-    return _.get(ret, 'accountMeta.contractByteCode').toString('hex');
+    return '0x' + _.get(ret, 'accountMeta.contractByteCode').toString('hex');
   }
 
   public async getNetworkId(params: any) {
@@ -149,7 +149,7 @@ class ApiService extends BaseService {
     const { receipt, blkHash } = receiptInfo || {};
     const { status, blkHeight, actHash, gasConsumed, contractAddress, logs = [] } = receipt || {};
 
-    const height = toNumber(blkHeight || 0);
+    const height = numberToHex(blkHeight || 0);
 
     let transaction;
     try {
@@ -160,25 +160,26 @@ class ApiService extends BaseService {
     }
 
     return {
-      blockNumber: height,
       blockHash: '0x' + blkHash,
-      transactionHash: '0x' + hash,
-      transactionIndex: 1,
-      cumulativeGasUsed: toNumber(gasConsumed || 0),
-      gasUsed: toNumber(gasConsumed || 0),
+      blockNumber: height,
+      contractAddress: (_.size(contractAddress) > 0  ? toEth(contractAddress || '') : null),
+      cumulativeGasUsed: numberToHex(gasConsumed || 0),
+      from: transaction.from,
+      gasUsed: numberToHex(gasConsumed || 0),
       logs: logs.map(v => ({
         blockHash: '0x' + blkHash,
         transactionHash: '0x' + hash,
-        logIndex: toNumber(v.index),
-        blockNumber: toNumber(v.blkHeight),
+        logIndex: numberToHex(v.index),
+        blockNumber: numberToHex(v.blkHeight),
         address: toEth(v.contractAddress),
         data: '0x' + v.data.toString('hex'),
         topics: v.topics.map(v => '0x' + v.toString('hex'))
       })),
-      contractAddress: (_.size(contractAddress) > 0  ? toEth(contractAddress || '') : null),
-      status: (status == 1 ? 1 : 0),
-      from: transaction.from,
-      to: transaction.to
+      logsBloom: '0x0',
+      status: numberToHex(status == 1 ? 1 : 0),
+      to: transaction.to,
+      transactionHash: '0x' + hash,
+      transactionIndex: transaction.transactionIndex
     };
   }
 
@@ -231,12 +232,12 @@ class ApiService extends BaseService {
 
   public async getBlockTransactionCountByHash(params: any) {
     const b = await this.blockByHash(removePrefix(params[0]));
-    return toNumber(b?.numActions || 0);
+    return numberToHex(b?.numActions || 0);
   }
 
   public async getBlockTransactionCountByNumber(params: any) {
     const b = await this.blockById(params[0]);
-    return toNumber(b?.numActions || 0);
+    return numberToHex(b?.numActions || 0);
   }
 
   private async getBlockWithTransaction(b: IBlockMeta, detail: boolean) {
@@ -245,11 +246,11 @@ class ApiService extends BaseService {
       byBlk: { blkHash: hash, start: 0, count: 1000 }
     });
 
-    const height = toNumber(b.height);
+    const height = numberToHex(b.height);
     const actions = ret.actionInfo || [];
     let transactions;
     if (detail) {
-      transactions = actions.map(v => {
+      transactions = actions.map((v, k) => {
         const { action } = v;
         const transfer = _.get(action, 'core.transfer');
         const execution = _.get(action, 'core.execution');
@@ -263,19 +264,28 @@ class ApiService extends BaseService {
           data = '0x' + data.toString('hex');
         else
           data = '0x';
-          
+
+        const from = '0x' + hash160b(v.action.senderPubKey);
         return {
-          hash: '0x' + v.actHash,
-          nonce: toNumber(_.get(action, 'core.nonce', 0)),
           blockHash: '0x' + v.blkHash,
           blockNumber: height,
-          transactionIndex: 1,
-          from: '0x' + hash160b(v.action.senderPubKey),
-          to,
-          value,
-          gas: toNumber(_.get(action, 'core.gasLimit', 0)),
+          chainId: null,
+          condition: null,
+          creates: null, // contract address if is contract creation
+          from,
+          gas: numberToHex(_.get(action, 'core.gasLimit', 0)),
           gasPrice: numberToHex(_.get(action, 'core.gasPrice', 0)),
-          input: data
+          hash: '0x' + v.actHash,
+          input: '0x' + data,
+          nonce: numberToHex(_.get(action, 'core.nonce', 0)),
+          publicKey: '0x' + v.action.senderPubKey,
+          r: '0x',
+          raw: '0x',
+          s: '0x',
+          standardV: '0x1',
+          to,
+          transactionIndex: numberToHex(k),
+          value
         };
       });
     } else {
@@ -283,23 +293,26 @@ class ApiService extends BaseService {
     }
 
     return {
-      number: height,
-      hash: '0x' + b.hash,
-      parentHash: '0x' + (<any>b).previousBlockHash,
-      nonce: 1,
-      sha3Uncles: '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
-      logsBloom: (<any>b).logsBloom,
-      transactionsRoot: '0x' + b.txRoot,
-      stateRoot: '0x' + b.deltaStateDigest,
-      miner: toEth(b.producerAddress),
-      difficulty: '21345678965432',
-      totalDifficulty: '324567845321',
-      size: toNumber(b.numActions),
+      author: toEth(b.producerAddress),
+      difficulty: '0xfffffffffffffffffffffffffffffffe',
       extraData: '0x',
-      gasLimit: toNumber(b.gasLimit),
+      gasLimit: numberToHex(b.gasLimit),
       gasUsed: numberToHex(b.gasUsed),
+      hash: '0x' + b.hash,
+      logsBloom: (<any>b).logsBloom,
+      miner: toEth(b.producerAddress),
+      number: height,
+      parentHash: '0x' + (<any>b).previousBlockHash,
+      receiptsRoot: '0x' + b.txRoot,
+      sha3Uncles: '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
+      signature: "",
+      size: numberToHex(b.numActions),
+      stateRoot: '0x' + b.deltaStateDigest,
+      step: '373422302',
       timestamp: numberToHex(b.timestamp.seconds),
+      totalDifficulty: '0xff14700000000000000000000000486001d72',
       transactions,
+      transactionsRoot: '0x' + b.txRoot,
       uncles: []
     };
   }
@@ -352,24 +365,48 @@ class ApiService extends BaseService {
     }
 
     return {
-      hash: `0x${actHash}`,
       blockHash: `0x${blkHash}`,
-      blockNumber: toNumber(blkHeight),
-      transactionIndex: toNumber(index),
-      nonce: toNumber(nonce),
-      gas: toNumber(gasLimit),
-      gasPrice: numberToHex(gasPrice),
-      value,
-      to,
+      blockNumber: numberToHex(blkHeight),
+      chainId: null,
+      condition: null,
+      creates: null,
       from: toEth(sender),
-      input: data
+      gas: numberToHex(gasLimit),
+      gasPrice: numberToHex(gasPrice),
+      hash: `0x${actHash}`,
+      input: data,
+      nonce: numberToHex(nonce),
+      publicKey: '0x' + senderPubKey,
+      r: '0x',
+      raw: '0x',
+      s: '0x',
+      standardV: '0x1',
+      to,
+      transactionIndex: numberToHex(index),
+      value
     };
+  }
+
+  private async getTransactionCreates(data: any) {
+    const transaction = this.transaction(data);
+    if (transaction.to != null)
+      return transaction;
+
+      let ret;
+      try {
+        ret = await antenna.iotx.getReceiptByAction({ actionHash: transaction.hash.slice(2) });
+      } catch (e) {
+        return null;
+      }
+
+      transaction.creates = _.get(ret, 'receiptInfo.receipt.contractAddress');
+      return transaction;
   }
 
   public async getTransactionByHash(params: any) {
     try {
       const ret = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkingPending: true } });
-      return this.transaction(ret);
+      return this.getTransactionCreates(ret);
     } catch (e) {
       return null;
     }
@@ -379,7 +416,7 @@ class ApiService extends BaseService {
     const [ blkHash, id ] = params;
     try {
       const ret = await antenna.iotx.getActions({ byBlk: { blkHash: removePrefix(blkHash), start: id, count: 1 } });
-      return this.transaction(ret);
+      return this.getTransactionCreates(ret);
     } catch (e) {
       return null;
     }
@@ -393,7 +430,7 @@ class ApiService extends BaseService {
 
     try {
       const ret = await antenna.iotx.getActions({ byBlk: { blkHash: b.hash, start: id, count: 1 } });
-      return this.transaction(ret);
+      return this.getTransactionCreates(ret);
     } catch (e) {
       return null;
     }
@@ -442,8 +479,8 @@ class ApiService extends BaseService {
     return logs.map(v => ({
       blockHash: '0x' + v.blkHash.toString('hex'),
       transactionHash: '0x' + v.actHash.toString('hex'),
-      logIndex: toNumber(v.index),
-      blockNumber: toNumber(v.blkHeight),
+      logIndex: numberToHex(v.index),
+      blockNumber: numberToHex(v.blkHeight),
       transactionIndex: 1,
       address: toEth(v.contractAddress),
       data: '0x' + v.data.toString('hex'),

@@ -10,6 +10,12 @@ const routes: Route[] = [
     path: '/ping',
     method: RequestMethod.GET,
     action: api.apiController.ping
+  },
+  {
+    name: 'metrics',
+    path: '/metrics',
+    method: RequestMethod.GET,
+    action: api.apiController.metrics
   }
 ];
 

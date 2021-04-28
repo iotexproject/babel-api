@@ -344,7 +344,7 @@ class ApiService extends BaseService {
     return this.getBlockWithTransaction(b, detail);
   }
 
-  private transaction(ret: any) {
+  private transaction(ret: any): any {
     const { actionInfo } = ret;
     const { action, actHash, blkHash, blkHeight, sender, index } = actionInfo[0];
     const { core, senderPubKey, signature } = action;
@@ -399,7 +399,7 @@ class ApiService extends BaseService {
         return null;
       }
 
-      transaction.creates = _.get(ret, 'receiptInfo.receipt.contractAddress');
+      transaction.creates = toEth(_.get(ret, 'receiptInfo.receipt.contractAddress'));
       return transaction;
   }
 

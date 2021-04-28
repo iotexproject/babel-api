@@ -28,3 +28,5 @@ export const LOG_LEVEL = get('LOG_LEVEL', 'error');
 export const END_POINT = get('END_POINT', 'https://api.iotex.one:443');
 
 export const CHAIN_ID = getNumber('CHAIN_ID', 4689);
+
+export const PROMETHEUS_HOST = get('PROMETHEUS_HOST', '');

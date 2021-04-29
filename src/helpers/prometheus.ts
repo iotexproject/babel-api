@@ -26,6 +26,7 @@ class Prometheus {
 
   public methodInc(method: string) {
     this.apiCounter.labels(method).inc();
+    this.apiCounter.labels('total').inc();
   }
 
 }

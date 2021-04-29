@@ -3,7 +3,7 @@ import { Context } from 'koa';
 import BaseController from '../base.controller';
 import { apiService } from '@service/index';
 import { logger } from '@common/utils';
-import { prometheus, PrometheusCounter } from '@helpers/prometheus';
+import { prometheus } from '@helpers/prometheus';
 
 const API_MAP: { [key: string]: string } = {
   ['eth_chainId']: 'getChainId',
@@ -55,8 +55,6 @@ const API_MAP: { [key: string]: string } = {
   ['eth_pendingTransactions']: 'getPendingTransactions'
 };
 
-const counter = new PrometheusCounter('api');
-
 class ApiController extends BaseController {
 
   public async entry(ctx: Context) {
@@ -65,7 +63,7 @@ class ApiController extends BaseController {
     logger.info(`> ${method} ${JSON.stringify(params)}`);
 
     if (_.isNil(id) || _.isNil(jsonrpc) || _.isNil(method)) {
-      counter.inc({ method: 'invalid' });
+      prometheus.methodInc('invalid');
       return;
     }
 
@@ -89,7 +87,7 @@ class ApiController extends BaseController {
 
     _.assign(ret, { result });
 
-    counter.inc({ method });
+    prometheus.methodInc(method);
 
     return ret;
   }
@@ -98,8 +96,8 @@ class ApiController extends BaseController {
     return 'pong';
   }
 
-  public async metrics(ctx: Context) {
-    ctx.body = await prometheus.metrics();
+  public metrics(ctx: Context) {
+    return prometheus.metrics();
   }
 
 }

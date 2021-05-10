@@ -29,6 +29,7 @@
     "number-precision": "^1.5.0",
     "number-to-bn": "^1.7.0",
     "prom-client": "^13.1.0",
+    "redis": "^3.1.2",
     "winston": "^3.3.3",
     "winston-rsyslog": "0.0.2"
   },
@@ -38,6 +39,7 @@
     "@types/koa2-cors": "^2.0.1",
     "@types/lodash": "^4.14.168",
     "@types/module-alias": "^2.0.0",
+    "@types/redis": "^2.8.28",
     "typescript": "^4.2.3"
   },
   "_moduleAliases": {

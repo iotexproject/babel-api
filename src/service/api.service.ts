@@ -1,14 +1,16 @@
 var BN = require('bn.js');
 var numberToBN = require('number-to-bn');
 import _ from 'lodash';
+import crypto from 'crypto';
 import Antenna from 'iotex-antenna';
 import { fromString, fromBytes } from 'iotex-antenna/lib/crypto/address';
 import { hash160b } from 'iotex-antenna/lib/crypto/hash';
-import { IBlockMeta, IGetLogsRequest } from 'iotex-antenna/lib/rpc-method/types';
+import { IBlockMeta, IGetLogsRequest, ITopics } from 'iotex-antenna/lib/rpc-method/types';
 import BaseService from './base.service';
 import { Exception } from '@common/exceptions';
 import { Code } from '@common/enums';
-import { END_POINT, CHAIN_ID } from '@config/env';
+import { END_POINT, CHAIN_ID, PROJECT } from '@config/env';
+import { redisHelper } from '@helpers/redis';
 
 const antenna = new Antenna(END_POINT);
 
@@ -46,6 +48,26 @@ function toString(v: number | string) {
 
 function toNumber(v: number | string) {
   return toBN(v).toNumber();
+}
+
+function translateTopics(topics: any[]): Array<ITopics> {
+  return topics.map(v => {
+    const ret: ITopics = { topic: [] };
+    if (typeof(v) == 'string' && v.startsWith('0x')) {
+      ret.topic.push(Buffer.from(v.slice(2), 'hex'));
+    } else if (_.isArray(v)) {
+      ret.topic = v.map(x => Buffer.from(x.slice(2), 'hex'));
+    }
+
+    return ret;
+  });
+}
+
+function createHash(content: string | object) {
+  if (typeof(content) == 'object')
+    content = JSON.stringify(content);
+
+  return crypto.createHash('sha1').update(content).digest('hex');
 }
 
 class ApiService extends BaseService {
@@ -151,7 +173,7 @@ class ApiService extends BaseService {
 
     const height = numberToHex(blkHeight || 0);
 
-    let transaction;
+    let transaction: any;
     try {
       const action = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkingPending: true } });
       transaction = this.transaction(action);
@@ -169,6 +191,7 @@ class ApiService extends BaseService {
       logs: logs.map(v => ({
         blockHash: '0x' + blkHash,
         transactionHash: '0x' + hash,
+        transactionIndex: _.get(transaction, 'transactionIndex', 0),
         logIndex: numberToHex(v.index),
         blockNumber: numberToHex(v.blkHeight),
         address: toEth(v.contractAddress),
@@ -441,7 +464,7 @@ class ApiService extends BaseService {
   }
 
   public async getLogs(params: any) {
-    const { fromBlock, toBlock, topics, address } = params[0];
+    const { fromBlock = 'latest', toBlock = 'latest', topics = [], address = [] } = params[0];
     
     const args: IGetLogsRequest = { filter: { address: [], topics: [] } };
     const predefined = [ 'latest', 'pending' ];
@@ -456,6 +479,12 @@ class ApiService extends BaseService {
       if (predefined.includes(toBlock))
         to = height;
     }
+
+    if (fromBlock == 'earliest')
+      from = 1;
+
+    if (toBlock == 'earliest')
+      to = 1;
     
     if (typeof(fromBlock) == 'string' && fromBlock.startsWith('0x'))
       from = toNumber(fromBlock);
@@ -464,7 +493,7 @@ class ApiService extends BaseService {
       to = toNumber(toBlock);
 
     if (from > 0 || to > 0)
-      args.byRange = { fromBlock: from, toBlock: to, paginationSize: 100, count: 0 };
+      args.byRange = { fromBlock: from, toBlock: to, paginationSize: 1000, count: 0 };
 
     if (!_.isNil(address)) {
       const addresses = (_.isArray(address) ? address : [ address ]);
@@ -472,7 +501,7 @@ class ApiService extends BaseService {
     }
 
     if (!_.isNil(topics))
-      args.filter.topics = (_.isArray(topics) ? topics : [ topics ]);
+      args.filter.topics = translateTopics(topics);
 
     const ret = await antenna.iotx.getLogs(args);
     const logs = ret.logs || [];
@@ -481,11 +510,116 @@ class ApiService extends BaseService {
       transactionHash: '0x' + v.actHash.toString('hex'),
       logIndex: numberToHex(v.index),
       blockNumber: numberToHex(v.blkHeight),
-      transactionIndex: 1,
+      transactionIndex: '0x1',
       address: toEth(v.contractAddress),
       data: '0x' + v.data.toString('hex'),
       topics: v.topics.map(v => '0x' + v.toString('hex'))
     }));
+  }
+
+  public async newFilter(params: any) {
+    const { fromBlock = 'latest', toBlock = 'latest', topics = [], address = [] } = params[0];
+    const key = '0x' + createHash({
+      fromBlock,
+      toBlock,
+      topics,
+      address,
+      rand: _.random(100000, 999999),
+      ts: Date.now(),
+      type: 0
+    });
+
+    const timeout = 15 * 60;
+    await redisHelper.setex(`${PROJECT}:FILTER:${key}`, JSON.stringify({ fromBlock, toBlock, topics, address, type: 0 }), timeout);
+    await redisHelper.setex(`${PROJECT}:FILTER_HEIGHT:${key}`, '1', timeout + 1);
+    return key;
+  }
+
+  public async newBlockFilter(params: any) {
+    const key = '0x' + createHash({
+      rand: _.random(100000, 999999),
+      ts: Date.now(),
+      type: 1
+    });
+
+    const ret = await antenna.iotx.getChainMeta({});
+    const blockHeight =  _.get(ret, 'chainMeta.height', 0);
+
+    const timeout = 15 * 60;
+    await redisHelper.setex(`${PROJECT}:FILTER:${key}`, JSON.stringify({ type: 1 }), timeout);
+    await redisHelper.setex(`${PROJECT}:FILTER_HEIGHT:${key}`, `${blockHeight}`, timeout + 1);
+    return key;
+  }
+
+  public async uninstallFilter(params: any) {
+    const [ id ] = params;
+    const ret = await redisHelper.del(`${PROJECT}:FILTER:${id}`);
+    return ret === '1';
+  }
+
+  public async getFilterChanges(params: any) {
+    const [ id ] = params;
+    const meta = await antenna.iotx.getChainMeta({});
+    const blockHeight =  _.get(meta, 'chainMeta.height', 0);
+
+    const key = `${PROJECT}:FILTER:${id}`;
+    const s = await redisHelper.get(key);
+
+    let filter;
+    try {
+      filter = JSON.parse(s || '');
+    } catch (e) {
+      return [];
+    }
+
+    const { type } = filter;
+    const keyHeight = `${PROJECT}:FILTER_HEIGHT:${id}}`;
+    const h = await redisHelper.get(keyHeight);
+    const height = _.defaultTo(Number(h), 0) + 1;
+    let ret: any[] = [];
+    let end = 0;
+
+    if (height > blockHeight)
+      return [];
+
+    if (type == 0) {
+      ret = await this.getLogs([ { ..._.pick(filter, ['topics', 'address']), fromBlock: numberToHex(height), toBlock: numberToHex(blockHeight) } ]);
+      end = blockHeight;
+    } else if (type == 1) {
+      const metas = await antenna.iotx.getBlockMetas({ byIndex: { start: height, count: 1000 } });
+      ret = metas.blkMetas.map(v => '0x' + v.hash);
+      end = _.min([ height + 1000, blockHeight ]);
+    }
+
+    const timeout = 15 * 60;
+    await redisHelper.expire(key, timeout);
+    await redisHelper.setex(keyHeight, `${end}`, timeout + 1);
+
+    return ret;
+  }
+
+  public async getFilterLogs(params: any) {
+    const [ id ] = params;
+    const key = `${PROJECT}:FILTER:${id}`;
+    const s = await redisHelper.get(key);
+
+    let filter;
+    try {
+      filter = JSON.parse(s || '');
+    } catch (e) {
+      return [];
+    }
+
+    const { type } = filter;
+    if (type == 0) {
+      return this.getLogs([ _.pick(filter, ['topics', 'address', 'fromBlock', 'toBlock' ]) ]);
+    } else if (type == 1) {
+      const keyHeight = `${PROJECT}:FILTER_HEIGHT:${id}}`;
+      const h = await redisHelper.get(keyHeight);
+      const height = _.defaultTo(Number(h), 0) + 1;
+      const metas = await antenna.iotx.getBlockMetas({ byIndex: { start: height, count: 1000 } });
+      return metas.blkMetas.map(v => '0x' + v.hash); 
+    }
   }
 
 }

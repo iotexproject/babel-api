@@ -42,25 +42,42 @@ const API_MAP: { [key: string]: string } = {
   ['eth_getTransactionByBlockNumberAndIndex']: 'getTransactionByBlockNumberAndIndex',
   ['eth_getUncleByBlockHashAndIndex']: 'notImplememted',
   ['eth_getUncleByBlockNumberAndIndex']: 'notImplememted',
-  ['eth_newFilter']: 'notImplememted',
-  ['eth_newBlockFilter']: 'notImplememted',
-  ['eth_newPendingTransactionFilter']: 'notImplememted',
-  ['eth_uninstallFilter']: 'notImplememted',
-  ['eth_getFilterChanges']: 'notImplememted',
-  ['eth_getFilterLogs']: 'notImplememted',
+  ['eth_newFilter']: 'newFilter',
+  ['eth_newBlockFilter']: 'newBlockFilter',
+  ['eth_uninstallFilter']: 'uninstallFilter',
+  ['eth_getFilterChanges']: 'getFilterChanges',
+  ['eth_getFilterLogs']: 'getFilterLogs',
   ['eth_getLogs']: 'getLogs',
-  ['eth_getWork']: 'notImplememted',
-  ['eth_submitWork']: 'notImplememted',
-  ['eth_submitHashrate']: 'notImplememted',
+  ['eth_newPendingTransactionFilter']: 'notImplememted',
   ['eth_pendingTransactions']: 'getPendingTransactions'
 };
+
+function getBody(ctx: Context) {
+  const { body } = ctx.request;
+  return _.isArray(body) ? body[0] : body;
+}
 
 class ApiController extends BaseController {
 
   public async entry(ctx: Context) {
-    const { id, method, params, jsonrpc } = ctx.request.body;
+    const { body } = ctx.request;
+    if (_.isArray(body)) {
+      const rets = [];
+      for (let i = 0; i < body.length; i++) {
+        const ret = await ApiController.singleEntry(body[i]);
+        rets.push(ret);
+      }
 
-    logger.info(`> ${method} ${JSON.stringify(params)}`);
+      return rets;
+    } else {
+      return ApiController.singleEntry(body);
+    }
+  }
+
+  private static async singleEntry(data: any) {
+    const { id, method, params, jsonrpc } = data;
+
+    logger.info(`> ${method} ${JSON.stringify(params)} ${id} ${jsonrpc}`);
 
     if (_.isNil(id) || _.isNil(jsonrpc) || _.isNil(method)) {
       prometheus.methodInc('invalid');

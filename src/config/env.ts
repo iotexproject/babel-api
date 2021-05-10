@@ -24,6 +24,7 @@ export const SYSLOG_TAG = get('SYSLOGD_TAG', `${PROJECT}`);
 export const REDIS_HOST = get('REDIS_HOST', '127.0.0.1');
 export const REDIS_PORT = getNumber('REDIS_PORT', 6379);
 export const REDIS_PASSWORD = get('REDIS_PASSWORD', '123456');
+export const REDIS_DB = getNumber('REDIS_DB', -1);
 
 export const PORT = getNumber('PORT', 9000);
 

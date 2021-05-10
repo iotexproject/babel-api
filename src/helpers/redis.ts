@@ -2,12 +2,13 @@ import _ from 'lodash';
 import redis from 'redis';
 import { promisify } from 'util';
 import { logger } from '@common/utils';
-import { REDIS_HOST, REDIS_PORT, REDIS_PASSWORD } from '@config/env';
+import { REDIS_HOST, REDIS_PORT, REDIS_PASSWORD, REDIS_DB } from '@config/env';
 
 const redisClient = redis.createClient({
    host: REDIS_HOST,
    port: REDIS_PORT,
-   password: REDIS_PASSWORD
+   password: REDIS_PASSWORD,
+   db: REDIS_DB >= 0 ? REDIS_DB : undefined
 });
 
 class RedisHelper {

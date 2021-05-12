@@ -6,10 +6,10 @@ This document describes how to deploy and supported/unsupported APIs.
 
 The service would be deployed as below,
 * Mainnet
-  - Host: http://babel-api.mainnet.iotex.io
+  - Host: https://babel-api.mainnet.iotex.io
   - Chain ID: 4689
 * Testnet
-  - Host: http://babel-api.testnet.iotex.io
+  - Host: https://babel-api.testnet.iotex.io
   - Chain ID: 4690
 
 Other tools/environment integrate guide please refer to below,
@@ -72,13 +72,17 @@ net_version
 net_peerCount
 net_listening
 eth_protocolVersion
-eth_syncing
 eth_getBlockTransactionCountByHash
 eth_getBlockTransactionCountByNumber
 eth_getBlockByHash
 eth_getTransactionByHash
 eth_getTransactionByBlockHashAndIndex
 eth_getTransactionByBlockNumberAndIndex
+eth_newFilter
+eth_newBlockFilter
+eth_uninstallFilter
+eth_getFilterChanges
+eth_getFilterLogs
 eth_getLogs
 ```
 
@@ -98,12 +102,7 @@ eth_signTransaction
 eth_sendTransaction
 eth_getUncleByBlockHashAndIndex
 eth_getUncleByBlockNumberAndIndex
-eth_newFilter
-eth_newBlockFilter
 eth_newPendingTransactionFilter
-eth_uninstallFilter
-eth_getFilterChanges
-eth_getFilterLogs
 eth_getWork
 eth_submitWork
 eth_submitHashrate

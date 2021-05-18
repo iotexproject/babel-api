@@ -19,6 +19,9 @@ function removePrefix(content: string) {
 }
 
 function toEth(address: string) {
+  if (_.size(address) == 0)
+    return '0x0000000000000000000000000000000000000000';
+
   const a = fromString(address);
   return a.stringEth();
 }
@@ -264,56 +267,64 @@ class ApiService extends BaseService {
   }
 
   private async getBlockWithTransaction(b: IBlockMeta, detail: boolean) {
-    const { hash } = b;
-    const ret = await antenna.iotx.getActions({
-      byBlk: { blkHash: hash, start: 0, count: 1000 }
-    });
-
+    let transactions: any = [];
     const height = numberToHex(b.height);
-    const actions = ret.actionInfo || [];
-    let transactions;
-    if (detail) {
-      transactions = actions.map((v, k) => {
-        const { action } = v;
-        const transfer = _.get(action, 'core.transfer');
-        const execution = _.get(action, 'core.execution');
-        let to = _.get(transfer, 'recipient') || _.get(execution, 'contract');
-        if (_.size(to) > 0)
-          to = toEth(to);
 
-        const value = numberToHex(_.get(transfer || execution, 'amount', 0));
-        let data = _.get(transfer, 'payload') || _.get(execution, 'data');
-        if (!_.isNil(data))
-          data = '0x' + data.toString('hex');
-        else
-          data = '0x';
-
-        const from = '0x' + hash160b(v.action.senderPubKey);
-        return {
-          blockHash: '0x' + v.blkHash,
-          blockNumber: height,
-          chainId: null,
-          condition: null,
-          creates: null, // contract address if is contract creation
-          from,
-          gas: numberToHex(_.get(action, 'core.gasLimit', 0)),
-          gasPrice: numberToHex(_.get(action, 'core.gasPrice', 0)),
-          hash: '0x' + v.actHash,
-          input: '0x' + data,
-          nonce: numberToHex(_.get(action, 'core.nonce', 0)),
-          publicKey: '0x' + v.action.senderPubKey,
-          r: '0x',
-          raw: '0x',
-          s: '0x',
-          standardV: '0x1',
-          to,
-          transactionIndex: numberToHex(k),
-          value
-        };
+    if (Number(b.height) > 0) {
+      const { hash } = b;
+      const ret = await antenna.iotx.getActions({
+        byBlk: { blkHash: hash, start: 0, count: 1000 }
       });
-    } else {
-      transactions = actions.map(v => '0x' + v.actHash);
+
+      const actions = ret.actionInfo || [];
+
+      if (detail) {
+        transactions = actions.map((v, k) => {
+          const { action } = v;
+          const transfer = _.get(action, 'core.transfer');
+          const execution = _.get(action, 'core.execution');
+          let to = _.get(transfer, 'recipient') || _.get(execution, 'contract');
+          if (_.size(to) > 0)
+            to = toEth(to);
+
+          const value = numberToHex(_.get(transfer || execution, 'amount', 0));
+          let data = _.get(transfer, 'payload') || _.get(execution, 'data');
+          if (!_.isNil(data))
+            data = '0x' + data.toString('hex');
+          else
+            data = '0x';
+
+          const from = '0x' + hash160b(v.action.senderPubKey);
+          return {
+            blockHash: '0x' + v.blkHash,
+            blockNumber: height,
+            chainId: null,
+            condition: null,
+            creates: null, // contract address if is contract creation
+            from,
+            gas: numberToHex(_.get(action, 'core.gasLimit', 0)),
+            gasPrice: numberToHex(_.get(action, 'core.gasPrice', 0)),
+            hash: '0x' + v.actHash,
+            input: '0x' + data,
+            nonce: numberToHex(_.get(action, 'core.nonce', 0)),
+            publicKey: '0x' + v.action.senderPubKey,
+            r: '0x',
+            raw: '0x',
+            s: '0x',
+            standardV: '0x1',
+            to,
+            transactionIndex: numberToHex(k),
+            value
+          };
+        });
+      } else {
+        transactions = actions.map(v => '0x' + v.actHash);
+      }
     }
+
+    let bloom = (<any>b).logsBloom;
+    if (_.size(bloom) == 0)
+      bloom = '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
 
     return {
       author: toEth(b.producerAddress),
@@ -322,13 +333,13 @@ class ApiService extends BaseService {
       gasLimit: numberToHex(b.gasLimit),
       gasUsed: numberToHex(b.gasUsed),
       hash: '0x' + b.hash,
-      logsBloom: (<any>b).logsBloom,
+      logsBloom: '0x' + bloom,
       miner: toEth(b.producerAddress),
       number: height,
       parentHash: '0x' + (<any>b).previousBlockHash,
       receiptsRoot: '0x' + b.txRoot,
       sha3Uncles: '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
-      signature: "",
+      signature: "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
       size: numberToHex(b.numActions),
       stateRoot: '0x' + b.deltaStateDigest,
       step: '373422302',

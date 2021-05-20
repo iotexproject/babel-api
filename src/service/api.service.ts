@@ -294,7 +294,9 @@ class ApiService extends BaseService {
           else
             data = '0x';
 
-          const from = '0x' + hash160b(v.action.senderPubKey);
+          const from = '0x' + hash160b(v.action.senderPubKey).toString('hex');
+	  const pub = v.action.senderPubKey as Buffer;
+	  const pubkey = pub.toString('hex');
           return {
             blockHash: '0x' + v.blkHash,
             blockNumber: height,
@@ -307,7 +309,7 @@ class ApiService extends BaseService {
             hash: '0x' + v.actHash,
             input: '0x' + data,
             nonce: numberToHex(_.get(action, 'core.nonce', 0)),
-            publicKey: '0x' + v.action.senderPubKey,
+            publicKey: '0x' + pubkey,
             r: '0x',
             raw: '0x',
             s: '0x',

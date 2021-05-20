@@ -307,7 +307,7 @@ class ApiService extends BaseService {
             gas: numberToHex(_.get(action, 'core.gasLimit', 0)),
             gasPrice: numberToHex(_.get(action, 'core.gasPrice', 0)),
             hash: '0x' + v.actHash,
-            input: '0x' + data,
+            input: data,
             nonce: numberToHex(_.get(action, 'core.nonce', 0)),
             publicKey: '0x' + pubkey,
             r: '0x',

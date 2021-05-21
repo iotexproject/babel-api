@@ -269,6 +269,7 @@ class ApiService extends BaseService {
   private async getBlockWithTransaction(b: IBlockMeta, detail: boolean) {
     let transactions: any = [];
     const height = numberToHex(b.height);
+    let transactionsRoot: string = '0x';
 
     if (Number(b.height) > 0) {
       const { hash } = b;
@@ -319,8 +320,11 @@ class ApiService extends BaseService {
             value
           };
         });
+
+	transactionsRoot = '0x' + b.txRoot;
       } else {
         transactions = actions.map(v => '0x' + v.actHash);
+	transactionsRoot = '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421';
       }
     }
 
@@ -348,7 +352,7 @@ class ApiService extends BaseService {
       timestamp: numberToHex(b.timestamp.seconds),
       totalDifficulty: '0xff14700000000000000000000000486001d72',
       transactions,
-      transactionsRoot: '0x' + b.txRoot,
+      transactionsRoot,
       uncles: []
     };
   }

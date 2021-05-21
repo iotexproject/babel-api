@@ -320,12 +320,13 @@ class ApiService extends BaseService {
             value
           };
         });
-
-	transactionsRoot = '0x' + b.txRoot;
       } else {
         transactions = actions.map(v => '0x' + v.actHash);
-	transactionsRoot = '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421';
       }
+
+      transactionsRoot = '0x' + b.txRoot;
+    } else {
+      transactionsRoot = '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421';
     }
 
     let bloom = (<any>b).logsBloom;

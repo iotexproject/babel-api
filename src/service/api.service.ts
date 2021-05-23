@@ -36,6 +36,9 @@ function fromEth(address: string) {
 }
 
 function toBN(v: number | string) {
+  if (!v) {
+    return numberToBN(0);
+  }
   return numberToBN(v);
 }
 
@@ -92,7 +95,6 @@ class ApiService extends BaseService {
   public async getBalance(params: any[]) {
     const [ address ] = params;
     const ret = await antenna.iotx.getAccount({ address: fromEth(address) });
-    
     const b = _.get(ret, 'accountMeta.balance', 0);
     return numberToHex(b);
   }
@@ -296,8 +298,8 @@ class ApiService extends BaseService {
             data = '0x';
 
           const from = '0x' + hash160b(v.action.senderPubKey).toString('hex');
-	  const pub = v.action.senderPubKey as Buffer;
-	  const pubkey = pub.toString('hex');
+          const pub = v.action.senderPubKey as Buffer;
+          const pubkey = pub.toString('hex');
           return {
             blockHash: '0x' + v.blkHash,
             blockNumber: height,
@@ -337,7 +339,9 @@ class ApiService extends BaseService {
       author: toEth(b.producerAddress),
       difficulty: '0xfffffffffffffffffffffffffffffffe',
       extraData: '0x',
+      // @ts-ignore
       gasLimit: numberToHex(b.gasLimit),
+      // @ts-ignore
       gasUsed: numberToHex(b.gasUsed),
       hash: '0x' + b.hash,
       logsBloom: '0x' + bloom,
@@ -524,6 +528,7 @@ class ApiService extends BaseService {
     const ret = await antenna.iotx.getLogs(args);
     const logs = ret.logs || [];
     return logs.map(v => ({
+      // @ts-ignore
       blockHash: '0x' + v.blkHash.toString('hex'),
       transactionHash: '0x' + v.actHash.toString('hex'),
       logIndex: numberToHex(v.index),

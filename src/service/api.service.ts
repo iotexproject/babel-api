@@ -486,7 +486,7 @@ class ApiService extends BaseService {
   }
 
   public async getLogs(params: any) {
-    const { fromBlock = 'latest', toBlock = 'latest', topics = [], address = [] } = params[0];
+    const [ fromBlock = 'latest', toBlock = 'latest', topics = [], address = [] ] = params;
     
     const args: IGetLogsRequest = { filter: { address: [], topics: [] } };
     const predefined = [ 'latest', 'pending' ];
@@ -527,7 +527,12 @@ class ApiService extends BaseService {
 
     const ret = await antenna.iotx.getLogs(args);
     const logs = ret.logs || [];
-    return logs.map(v => ({
+
+    return logs.filter(v => {
+      if (v.topics.length > 0) {
+        return v
+      }
+    }).map(v => ({
       // @ts-ignore
       blockHash: '0x' + v.blkHash.toString('hex'),
       transactionHash: '0x' + v.actHash.toString('hex'),

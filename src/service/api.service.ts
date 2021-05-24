@@ -106,7 +106,7 @@ class ApiService extends BaseService {
 
   public async getTransactionCount(params: any[]) {
     const [ address, block_id ] = params;
-    const ret = await antenna.iotx.getAccount({ address: fromEth(address) });    
+    const ret = await antenna.iotx.getAccount({ address: fromEth(address) });
     const b = _.get(ret, 'accountMeta.pendingNonce', 0);
     return numberToHex(b);
   }
@@ -150,7 +150,11 @@ class ApiService extends BaseService {
   public async getCode(params: any[]) {
     const [ address, block_id ] = params;
     const ret = await antenna.iotx.getAccount({ address: fromEth(address) });
-    return '0x' + _.get(ret, 'accountMeta.contractByteCode').toString('hex');
+    // @ts-ignore
+    if (ret.accountMeta.contractByteCode) {
+      return '0x' + _.get(ret, 'accountMeta.contractByteCode').toString('hex');
+    }
+    return '0x0';
   }
 
   public async getNetworkId(params: any) {

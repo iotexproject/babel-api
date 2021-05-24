@@ -154,7 +154,7 @@ class ApiService extends BaseService {
     if (ret.accountMeta.contractByteCode) {
       return '0x' + _.get(ret, 'accountMeta.contractByteCode').toString('hex');
     }
-    return '0x0';
+    return '0x';
   }
 
   public async getNetworkId(params: any) {

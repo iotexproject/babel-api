@@ -11,6 +11,7 @@ import { logger as reqLogger, cors, body, realIp } from '@middlewares/index';
 import { PORT } from '@config/env';
 import apiRoutes from '@routes/api.routes';
 import healthRoutes from '@routes/health.routes';
+import { createWsServer } from './wsapi';
 
 const app = new Koa();
 
@@ -29,6 +30,9 @@ app.use(handleRouter([ ...apiRoutes, ...healthRoutes ], 'api').routes());
 const server = http.createServer(app.callback());
 server.keepAliveTimeout = 120 * 1000;
 server.headersTimeout = 125 * 1000;
+
+const wss = createWsServer(server);
+
 server.listen(PORT, 65535, () => {
   logger.info(`api server start, hostname: ${os.hostname()}, port: ${PORT}`);
 });

@@ -148,7 +148,7 @@ class ApiService extends BaseService {
     const [ address, block_id ] = params;
     const ret = await antenna.iotx.getAccount({ address: fromEth(address) });
     const code = _.get(ret, 'accountMeta.contractByteCode');
-    return '0x' + (_isNil(code) ? '' : code.toString('hex'));
+    return '0x' + (_.isNil(code) ? '' : code.toString('hex'));
   }
 
   public async getNetworkId(params: any) {

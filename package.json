@@ -31,7 +31,8 @@
     "prom-client": "^13.1.0",
     "redis": "^3.1.2",
     "winston": "^3.3.3",
-    "winston-rsyslog": "0.0.2"
+    "winston-rsyslog": "0.0.2",
+    "ws": "^7.4.5"
   },
   "devDependencies": {
     "@types/koa": "^2.13.1",
@@ -40,6 +41,7 @@
     "@types/lodash": "^4.14.168",
     "@types/module-alias": "^2.0.0",
     "@types/redis": "^2.8.28",
+    "@types/ws": "^7.4.4",
     "typescript": "^4.2.3"
   },
   "_moduleAliases": {

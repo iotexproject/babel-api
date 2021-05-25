@@ -1,16 +1,20 @@
 var BN = require('bn.js');
 var numberToBN = require('number-to-bn');
 import _ from 'lodash';
+import WebSocket from 'ws';
 import crypto from 'crypto';
 import Antenna from 'iotex-antenna';
 import { fromString, fromBytes } from 'iotex-antenna/lib/crypto/address';
 import { hash160b } from 'iotex-antenna/lib/crypto/hash';
-import { IBlockMeta, IGetLogsRequest, ITopics } from 'iotex-antenna/lib/rpc-method/types';
+import { IBlockMeta, IGetLogsRequest, ITopics, IBlockHeader, IBlockHeaderCore, ClientReadableStream, IStreamBlocksResponse, IStreamLogsResponse } from 'iotex-antenna/lib/rpc-method/types';
 import BaseService from './base.service';
 import { Exception } from '@common/exceptions';
 import { Code } from '@common/enums';
 import { END_POINT, CHAIN_ID, PROJECT } from '@config/env';
 import { redisHelper } from '@helpers/redis';
+import { logger } from '@common/utils';
+
+type Stream = ClientReadableStream<IStreamBlocksResponse> | ClientReadableStream<IStreamLogsResponse>;
 
 const antenna = new Antenna(END_POINT);
 
@@ -37,6 +41,10 @@ function fromEth(address: string) {
 
 function toBN(v: number | string) {
   return numberToBN(_.isNil(v) ? 0 : v);
+}
+
+function bufferToHex(v: Buffer | {}) {
+  return '0x' + (_.isNil(v) ? '' : v.toString('hex'));
 }
 
 function numberToHex(v: number | string) {
@@ -70,7 +78,7 @@ function createHash(content: string | object) {
   if (typeof(content) == 'object')
     content = JSON.stringify(content);
 
-  return crypto.createHash('sha1').update(content).digest('hex');
+  return '0x' + crypto.createHash('sha1').update(content).digest('hex');
 }
 
 class ApiService extends BaseService {
@@ -148,7 +156,7 @@ class ApiService extends BaseService {
     const [ address, block_id ] = params;
     const ret = await antenna.iotx.getAccount({ address: fromEth(address) });
     const code = _.get(ret, 'accountMeta.contractByteCode');
-    return '0x' + (_.isNil(code) ? '' : code.toString('hex'));
+    return bufferToHex(code);
   }
 
   public async getNetworkId(params: any) {
@@ -198,8 +206,8 @@ class ApiService extends BaseService {
         logIndex: numberToHex(v.index),
         blockNumber: numberToHex(v.blkHeight),
         address: toEth(v.contractAddress),
-        data: '0x' + v.data.toString('hex'),
-        topics: v.topics.map(v => '0x' + v.toString('hex'))
+        data: bufferToHex(v.data),
+        topics: v.topics.map(v => bufferToHex(v))
       })),
       logsBloom: '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
       status: numberToHex(status == 1 ? 1 : 0),
@@ -293,14 +301,11 @@ class ApiService extends BaseService {
 
           const value = numberToHex(_.get(transfer || execution, 'amount', 0));
           let data = _.get(transfer, 'payload') || _.get(execution, 'data');
-          if (!_.isNil(data))
-            data = '0x' + data.toString('hex');
-          else
-            data = '0x';
+          data = bufferToHex(data);
 
-          const from = '0x' + hash160b(v.action.senderPubKey).toString('hex');
+          const from = bufferToHex(hash160b(v.action.senderPubKey));
           const pub = v.action.senderPubKey as Buffer;
-          const pubkey = pub.toString('hex');
+          const pubkey = bufferToHex(pub);
           return {
             blockHash: '0x' + v.blkHash,
             blockNumber: height,
@@ -313,7 +318,7 @@ class ApiService extends BaseService {
             hash: '0x' + v.actHash,
             input: data,
             nonce: numberToHex(_.get(action, 'core.nonce', 0)),
-            publicKey: '0x' + pubkey,
+            publicKey: pubkey,
             r: '0x0',
             v: '0x0',
             s: '0x0',
@@ -407,7 +412,7 @@ class ApiService extends BaseService {
       const { amount, contract, data: d } = execution;
       value = numberToHex(amount);
       to = _.size(contract) > 0 ? toEth(contract) : null;
-      data = `0x${d.toString('hex')}`;
+      data = bufferToHex(d);
     }
 
     return {
@@ -529,21 +534,20 @@ class ApiService extends BaseService {
     const logs = ret.logs || [];
 
     return logs.filter(v => v.topics.length > 0).map(v => ({
-      // @ts-ignore
-      blockHash: '0x' + v.blkHash.toString('hex'),
-      transactionHash: '0x' + v.actHash.toString('hex'),
+      blockHash: bufferToHex(v.blkHash),
+      transactionHash: bufferToHex(v.actHash),
       logIndex: numberToHex(v.index),
       blockNumber: numberToHex(v.blkHeight),
       transactionIndex: '0x1',
       address: toEth(v.contractAddress),
-      data: '0x' + v.data.toString('hex'),
-      topics: v.topics.map(v => '0x' + v.toString('hex'))
+      data: bufferToHex(v.data),
+      topics: v.topics.map(v => bufferToHex(v))
     }));
   }
 
   public async newFilter(params: any) {
     const { fromBlock = 'latest', toBlock = 'latest', topics = [], address = [] } = params[0];
-    const key = '0x' + createHash({
+    const key = createHash({
       fromBlock,
       toBlock,
       topics,
@@ -560,7 +564,7 @@ class ApiService extends BaseService {
   }
 
   public async newBlockFilter(params: any) {
-    const key = '0x' + createHash({
+    const key = createHash({
       rand: _.random(100000, 999999),
       ts: Date.now(),
       type: 1
@@ -644,6 +648,164 @@ class ApiService extends BaseService {
       const metas = await antenna.iotx.getBlockMetas({ byIndex: { start: height, count: 1000 } });
       return metas.blkMetas.map(v => '0x' + v.hash); 
     }
+  }
+
+  public async subscribe(params: any, ws: WebSocket) {
+    const [ title ] = params;
+    if (title == 'newHeads') {
+      return this.subscribeBlock(ws);
+    } else if (title == 'logs') {
+      return this.subscribeLogs(ws, params[1]);
+    }
+  }
+
+  public async unsubscribe(params: any, ws: WebSocket) {
+    const [ subscription ] = params;
+    const stream = this.getStream(ws, subscription);
+    if (stream) {
+      this.removeStream(ws, subscription);
+      stream.cancel();
+      return true;
+    }
+
+    return false;
+  }
+
+  public closeConnection(ws: WebSocket) {
+    const subscribes: {[key: string]: Stream} = (<any>ws).subscribes || {};
+    _.forEach(subscribes, (v: Stream) => v.cancel());
+    (<any>ws).subscribes = null;
+  }
+
+  private addStream(ws: WebSocket, subscribe: string, stream: Stream) {
+    const subscribes: {[key: string]: Stream} = (<any>ws).subscribes || {};
+    if (_.isNil((<any>ws).subscribes))
+      (<any>ws).subscribes = subscribes;
+      
+    subscribes[subscribe] = stream;
+  }
+
+  private getStream(ws: WebSocket, subscribe: string) {
+    const subscribes: {[key: string]: Stream} = (<any>ws).subscribes || {};
+    return subscribes[subscribe] || null;
+  }
+
+  private removeStream(ws: WebSocket, subscribe: string) {
+    const subscribes: {[key: string]: Stream} = (<any>ws).subscribes || {};
+    if (subscribes[subscribe])
+      delete subscribes[subscribe];
+  }
+
+  private async subscribeBlock(ws: WebSocket) {
+    const subscription = createHash({
+      rand: _.random(100000, 999999),
+      ts: Date.now(),
+      type: 2
+    });
+
+    const stream = antenna.iotx.streamBlocks({});
+    this.addStream(ws, subscription, stream);
+    stream.on('data', response => {
+      const header: IBlockHeader = _.get(response, 'block.block.header');
+      const {
+        height = 0,
+        timestamp,
+        prevBlockHash,
+        txRoot,
+        deltaStateDigest,
+        receiptRoot,
+        logsBloom
+      } = header.core as IBlockHeaderCore;
+
+      const ret = {
+        jsonrpc: '2.0',
+        method: 'eth_subscription',
+        params: {
+          result: {
+            difficulty: '0xfffffffffffffffffffffffffffffffe',
+            extraData: '0x',
+            gasLimit: '0x0',
+            gasUsed: '0x0',
+            logsBloom: bufferToHex(logsBloom),
+            miner: '0x',
+            nonce: '0x0',
+            number: numberToHex(height),
+            parentHash: bufferToHex(prevBlockHash),
+            receiptRoot: bufferToHex(receiptRoot),
+            sha3Uncles: '0x',
+            stateRoot: bufferToHex(deltaStateDigest),
+            timestamp: numberToHex(timestamp?.seconds || 0),
+            transactionsRoot: bufferToHex(txRoot)
+          },
+          subscription
+        }
+      };
+
+      try {
+        ws.send(JSON.stringify(ret));
+      } catch (e) {
+        logger.error('ws send failed', e);
+      }
+    });
+
+    stream.on('error', e => stream.cancel());
+    stream.on('end', () => logger.info('stream end'));
+
+    return subscription;
+  }
+
+  private async subscribeLogs(ws: WebSocket, params: any) {
+    const { address = [], topics = [] } = params;
+    
+    const subscription = createHash({
+      rand: _.random(100000, 999999),
+      ts: Date.now(),
+      type: 3
+    });
+
+    const stream = antenna.iotx.streamLogs({
+      filter: {
+        address: (_.isArray(address) ? address : [ address ]).map(v => fromEth(v)),
+        topics: translateTopics(topics)
+      }
+    });
+
+    this.addStream(ws, subscription, stream);
+    stream.on('data', response => {
+      const log = response.log;
+      if (!log)
+        return;
+
+      const { contractAddress, topics, data, blkHeight, actHash, index, blkHash } = log;
+      const ret = {
+        jsonrpc: '2.0',
+        method: 'eth_subscription',
+        params: {
+          result: {
+            address: toEth(contractAddress),
+            blockHash: bufferToHex(blkHash),
+            blockNumber: numberToHex(blkHeight),
+            data: bufferToHex(data),
+            logIndex: numberToHex(index),
+            topics: topics.map(v => bufferToHex(v)),
+            transactionHash: bufferToHex(actHash),
+            transactionIndex: '0x0'
+          },
+          subscription
+        }
+      };
+
+      try {
+        ws.send(JSON.stringify(ret));
+      } catch (e) {
+        logger.error('ws send failed', e);
+      }
+    });
+
+    stream.on('error', e => stream.cancel());
+    stream.on('end', () => logger.info('stream end'));
+
+    return subscription;
   }
 
 }

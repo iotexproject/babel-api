@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { Context } from 'koa';
+import WebSocket from 'ws';
 import BaseController from '../base.controller';
 import { apiService } from '@service/index';
 import { logger } from '@common/utils';
@@ -49,7 +50,9 @@ const API_MAP: { [key: string]: string } = {
   ['eth_getFilterLogs']: 'getFilterLogs',
   ['eth_getLogs']: 'getLogs',
   ['eth_newPendingTransactionFilter']: 'notImplememted',
-  ['eth_pendingTransactions']: 'getPendingTransactions'
+  ['eth_pendingTransactions']: 'getPendingTransactions',
+  ['eth_subscribe']: 'subscribe',
+  ['eth_unsubscribe']: 'unsubscribe'
 };
 
 function getBody(ctx: Context) {
@@ -59,22 +62,38 @@ function getBody(ctx: Context) {
 
 class ApiController extends BaseController {
 
-  public async entry(ctx: Context) {
-    const { body } = ctx.request;
+  private static async _entry(body: any, ws?: WebSocket) {
     if (_.isArray(body)) {
       const rets = [];
       for (let i = 0; i < body.length; i++) {
-        const ret = await ApiController.singleEntry(body[i]);
+        const ret = await ApiController.singleEntry(body[i], ws);
         rets.push(ret);
       }
 
       return rets;
     } else {
-      return ApiController.singleEntry(body);
+      return ApiController.singleEntry(body, ws);
     }
   }
 
-  private static async singleEntry(data: any) {
+  public async entry(ctx: Context) {
+    const { body } = ctx.request;
+    return ApiController._entry(body);
+  }
+
+  public async wsEntry(ws: WebSocket, message: string) {
+    let body;
+    try {
+      body = JSON.parse(message);
+    } catch (e) {
+      logger.info('invalid message: ' + message);
+      return null;
+    }
+
+    return ApiController._entry(body, ws);
+  }
+
+  private static async singleEntry(data: any, ws?: WebSocket) {
     const { id, method, params, jsonrpc } = data;
 
     logger.info(`> ${method} ${JSON.stringify(params)} ${id} ${jsonrpc}`);
@@ -91,7 +110,7 @@ class ApiController extends BaseController {
     const name = API_MAP[method];
     if (name != null && service[name] != null) {
       try {
-        result = await service[name](params);
+          result = await service[name](params, ws);
       } catch (e) {
         result = { error: e.toString() };
         logger.error(`process ${name} rpc error: e.toString()`);
@@ -107,6 +126,10 @@ class ApiController extends BaseController {
     prometheus.methodInc(method);
 
     return ret;
+  }
+
+  public closeConnection(ws: WebSocket) {
+    return apiService.closeConnection(ws);
   }
 
   public ping(ctx: Context) {

@@ -30,6 +30,7 @@
     "number-to-bn": "^1.7.0",
     "prom-client": "^13.1.0",
     "redis": "^3.1.2",
+    "scrypt": "github:barrysteyn/node-scrypt#fb60a8d3c158fe115a624b5ffa7480f3a24b03fb",
     "winston": "^3.3.3",
     "winston-rsyslog": "0.0.2",
     "ws": "^7.4.5"

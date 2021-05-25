@@ -36,10 +36,7 @@ function fromEth(address: string) {
 }
 
 function toBN(v: number | string) {
-  if (!v) {
-    return numberToBN(0);
-  }
-  return numberToBN(v);
+  return numberToBN(_.isNil(v) ? 0 : v);
 }
 
 function numberToHex(v: number | string) {
@@ -150,11 +147,8 @@ class ApiService extends BaseService {
   public async getCode(params: any[]) {
     const [ address, block_id ] = params;
     const ret = await antenna.iotx.getAccount({ address: fromEth(address) });
-    // @ts-ignore
-    if (ret.accountMeta.contractByteCode) {
-      return '0x' + _.get(ret, 'accountMeta.contractByteCode').toString('hex');
-    }
-    return '0x';
+    const code = _.get(ret, 'accountMeta.contractByteCode');
+    return '0x' + (_isNil(code) ? '' : code.toString('hex'));
   }
 
   public async getNetworkId(params: any) {
@@ -490,8 +484,7 @@ class ApiService extends BaseService {
   }
 
   public async getLogs(params: any) {
-    const [ fromBlock = 'latest', toBlock = 'latest', topics = [], address = [] ] = params;
-    
+    const { fromBlock = 'latest', toBlock = 'latest', topics = [], address = [] } = params[0];
     const args: IGetLogsRequest = { filter: { address: [], topics: [] } };
     const predefined = [ 'latest', 'pending' ];
     let from = 0;
@@ -532,11 +525,7 @@ class ApiService extends BaseService {
     const ret = await antenna.iotx.getLogs(args);
     const logs = ret.logs || [];
 
-    return logs.filter(v => {
-      if (v.topics.length > 0) {
-        return v
-      }
-    }).map(v => ({
+    return logs.filter(v => v.topics.length > 0).map(v => ({
       // @ts-ignore
       blockHash: '0x' + v.blkHash.toString('hex'),
       transactionHash: '0x' + v.actHash.toString('hex'),

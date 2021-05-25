@@ -113,7 +113,7 @@ class ApiController extends BaseController {
           result = await service[name](params, ws);
       } catch (e) {
         result = { error: e.toString() };
-        logger.error(`process ${name} rpc error: e.toString()`);
+        logger.error(`process ${name} rpc error: ${e.toString()}`);
       }
 
       logger.info(`< ${method}  ${typeof(result) == 'object' ? JSON.stringify(result) : result }`);

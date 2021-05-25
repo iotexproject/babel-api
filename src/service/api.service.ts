@@ -287,6 +287,9 @@ class ApiService extends BaseService {
           let to = _.get(transfer, 'recipient') || _.get(execution, 'contract');
           if (_.size(to) > 0)
             to = toEth(to);
+          if (!to || to === "") {
+            to = null;
+          }
 
           const value = numberToHex(_.get(transfer || execution, 'amount', 0));
           let data = _.get(transfer, 'payload') || _.get(execution, 'data');

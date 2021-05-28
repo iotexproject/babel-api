@@ -16,6 +16,7 @@ import { logger } from '@common/utils';
 
 type Stream = ClientReadableStream<IStreamBlocksResponse> | ClientReadableStream<IStreamLogsResponse>;
 
+const DEFAULT_CALLER = 'io1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqd39ym7';
 const antenna = new Antenna(END_POINT);
 
 function removePrefix(content: string) {
@@ -124,7 +125,7 @@ class ApiService extends BaseService {
 
   public async call(params: any[]) {
     const [ tx ] = params;
-    const { to, data } = tx;
+    const { from, to, data } = tx;
     const address = fromEth(to);
 
     if (to == '0xb1f8e55c7f64d203c1400b9d8555d050f94adf39')
@@ -138,7 +139,7 @@ class ApiService extends BaseService {
         contract: address,
         data: d
       },
-      callerAddress: address
+      callerAddress: (from ? fromEth(from) : DEFAULT_CALLER)
     });
 
     return '0x' + ret;

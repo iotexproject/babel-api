@@ -94,7 +94,7 @@ class ApiController extends BaseController {
   }
 
   private static async singleEntry(data: any, ws?: WebSocket) {
-    const { id, method, params, jsonrpc } = data;
+    const { id, method, params, jsonrpc = '2.0' } = data;
 
     logger.info(`> ${method} ${JSON.stringify(params)} ${id} ${jsonrpc}`);
 

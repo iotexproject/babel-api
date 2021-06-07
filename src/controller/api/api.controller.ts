@@ -94,16 +94,16 @@ class ApiController extends BaseController {
   }
 
   private static async singleEntry(data: any, ws?: WebSocket) {
-    const { id, method, params, jsonrpc = '2.0' } = data;
+    const { id, method, params } = data;
 
-    logger.info(`> ${method} ${JSON.stringify(params)} ${id} ${jsonrpc}`);
+    logger.info(`> ${method} ${JSON.stringify(params)} ${id}`);
 
-    if (_.isNil(id) || _.isNil(jsonrpc) || _.isNil(method)) {
+    if (_.isNil(id) || _.isNil(method)) {
       prometheus.methodInc('invalid');
       return;
     }
 
-    const ret = { id, jsonrpc };
+    const ret = { jsonrpc: '2.0', id };
     let result;
 
     const service: any = apiService;
@@ -112,7 +112,7 @@ class ApiController extends BaseController {
       try {
           result = await service[name](params, ws);
       } catch (e) {
-        result = { error: e.toString() };
+        result = null;
         logger.error(`process ${name} rpc error: ${e.toString()}`);
       }
 

@@ -4,7 +4,7 @@ How to use hardhat, please refer to [the official hardhat document](https://hard
 
 This guide only describes how to configure hardhat so that you could development and deploy contracts on IOTEX network.
 
-Let's assume that the server is deploy on HOST=http://babel-api.mainnet.iotex.io and you had already created a hardhat project.
+Let's assume that the server is deploy on HOST=https://babel-api.mainnet.iotex.io and you had already created a hardhat project.
 
 ## 1. Configure Hardhat
 

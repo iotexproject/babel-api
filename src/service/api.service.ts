@@ -1,6 +1,7 @@
 var BN = require('bn.js');
 var numberToBN = require('number-to-bn');
 import _ from 'lodash';
+import { bufferToInt } from 'ethereumjs-util';
 import WebSocket from 'ws';
 import crypto from 'crypto';
 import Antenna from 'iotex-antenna';
@@ -13,6 +14,8 @@ import { Code } from '@common/enums';
 import { END_POINT, CHAIN_ID, PROJECT } from '@config/env';
 import { redisHelper } from '@helpers/redis';
 import { logger } from '@common/utils';
+
+const publicKeyToAddress = require('ethereum-public-key-to-address');
 
 type Stream = ClientReadableStream<IStreamBlocksResponse> | ClientReadableStream<IStreamLogsResponse>;
 
@@ -416,10 +419,14 @@ class ApiService extends BaseService {
       data = bufferToHex(d);
     }
 
+    const r = bufferToHex(signature.slice(0, 32));
+    const s = bufferToHex(signature.slice(32, 64));
+    const v = numberToHex(bufferToInt(signature.slice(64)));
+
     return {
       blockHash: `0x${blkHash}`,
       blockNumber: numberToHex(blkHeight),
-      chainId: null,
+      chainId: numberToHex(CHAIN_ID),
       condition: null,
       creates: null,
       from: toEth(sender),
@@ -428,11 +435,12 @@ class ApiService extends BaseService {
       hash: `0x${actHash}`,
       input: data,
       nonce: numberToHex(nonce),
-      publicKey: '0x' + senderPubKey,
-      r: '0x',
+      publicKey: bufferToHex(senderPubKey),
+      r,
       raw: '0x',
-      s: '0x',
-      standardV: '0x1',
+      s,
+      standardV: v,
+      v,
       to,
       transactionIndex: numberToHex(index),
       value
@@ -708,6 +716,7 @@ class ApiService extends BaseService {
     this.addStream(ws, subscription, stream);
     stream.on('data', response => {
       const header: IBlockHeader = _.get(response, 'block.block.header');
+      const { producerPubkey, signature } = header;
       const {
         height = 0,
         timestamp,
@@ -718,25 +727,31 @@ class ApiService extends BaseService {
         logsBloom
       } = header.core as IBlockHeaderCore;
 
+      const hash = response.blockIdentifier?.hash;
+      const miner = publicKeyToAddress(producerPubkey.toString('hex'));
       const ret = {
         jsonrpc: '2.0',
         method: 'eth_subscription',
         params: {
           result: {
+            number: numberToHex(height),
+            hash: '0x' + hash,
+            parentHash: bufferToHex(prevBlockHash),
+            sha3Uncles: '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
+            logsBloom: bufferToHex(logsBloom),
+            transactionsRoot: bufferToHex(txRoot),
+            stateRoot: bufferToHex(deltaStateDigest),
+            receiptsRoot: bufferToHex(receiptRoot),
+            miner,
+            author: miner,
             difficulty: '0xfffffffffffffffffffffffffffffffe',
-            extraData: '0x',
+            extraData: '0xdb830302058c4f70656e457468657265756d86312e35312e30826c69',
+            size: '0x100',
             gasLimit: '0x0',
             gasUsed: '0x0',
-            logsBloom: bufferToHex(logsBloom),
-            miner: '0x',
-            nonce: '0x0',
-            number: numberToHex(height),
-            parentHash: bufferToHex(prevBlockHash),
-            receiptRoot: bufferToHex(receiptRoot),
-            sha3Uncles: '0x',
-            stateRoot: bufferToHex(deltaStateDigest),
             timestamp: numberToHex(timestamp?.seconds || 0),
-            transactionsRoot: bufferToHex(txRoot)
+            step: '373422302',
+            signature: signature.toString('hex')
           },
           subscription
         }

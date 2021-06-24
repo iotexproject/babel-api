@@ -32,11 +32,20 @@ sudo yum install nodejs
 ```
 
 ### 1.3. Configuration file
-create xxx/.env
+create .env under root directory as below,
+
+for mainnet,
 ```
 PORT=8545
 CHAIN_ID=4689
 END_POINT=https://api.iotex.one:443
+```
+
+for testnet,
+```
+PORT=8545
+CHAIN_ID=4690
+END_POINT=https://api.testnet.iotex.one:443
 ```
 
 ### 1.4. Install Node Libraries

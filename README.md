@@ -48,6 +48,14 @@ CHAIN_ID=4690
 END_POINT=https://api.testnet.iotex.one:443
 ```
 
+config redis if your local configuration was different from default.
+```
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379,
+REDIS_PASSWORD=123456
+REDIS_DB=-1
+```
+
 ### 1.4. Install Node Libraries
 ```
 npm i

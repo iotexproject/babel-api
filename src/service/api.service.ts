@@ -190,8 +190,8 @@ class ApiService extends BaseService {
 
     let transaction: any;
     try {
-      const action = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkingPending: true } });
-      transaction = this.transaction(action);
+      const action = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkPending: true } });
+      transaction = this.transaction(action.actionInfo[0]);
     } catch (e) {
       return null;
     }
@@ -292,54 +292,17 @@ class ApiService extends BaseService {
       const actions = ret.actionInfo || [];
 
       if (detail) {
-        transactions = actions.map((v, k) => {
-          const { action } = v;
-          const transfer = _.get(action, 'core.transfer');
-          const execution = _.get(action, 'core.execution');
-          let to = _.get(transfer, 'recipient') || _.get(execution, 'contract');
-          if (_.size(to) > 0)
-            to = toEth(to);
-          if (!to || to === "") {
-            to = null;
-          }
-
-          const value = numberToHex(_.get(transfer || execution, 'amount', 0));
-          let data = _.get(transfer, 'payload') || _.get(execution, 'data');
-          data = bufferToHex(data);
-
-          const from = bufferToHex(hash160b(v.action.senderPubKey));
-          const pub = v.action.senderPubKey as Buffer;
-          const pubkey = bufferToHex(pub);
-          return {
-            blockHash: '0x' + v.blkHash,
-            blockNumber: height,
-            chainId: null,
-            condition: null,
-            creates: null, // contract address if is contract creation
-            from,
-            gas: numberToHex(_.get(action, 'core.gasLimit', 0)),
-            gasPrice: numberToHex(_.get(action, 'core.gasPrice', 0)),
-            hash: '0x' + v.actHash,
-            input: data,
-            nonce: numberToHex(_.get(action, 'core.nonce', 0)),
-            publicKey: pubkey,
-            r: '0x0',
-            v: '0x0',
-            s: '0x0',
-            standardV: '0x1',
-            to,
-            transactionIndex: numberToHex(k),
-            value
-          };
-        });
+        const self = this;
+        transactions = actions.map(v => self.transaction(v)).filter(v => v != null);
       } else {
         transactions = actions.map(v => '0x' + v.actHash);
       }
 
       transactionsRoot = '0x' + b.txRoot;
-    } else {
-      transactionsRoot = '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421';
     }
+
+    if (_.isEmpty(transactions))
+      transactionsRoot = '0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421';
 
     let bloom = (<any>b).logsBloom;
     if (_.size(bloom) == 0)
@@ -349,9 +312,7 @@ class ApiService extends BaseService {
       author: toEth(b.producerAddress),
       difficulty: '0xfffffffffffffffffffffffffffffffe',
       extraData: '0x',
-      // @ts-ignore
       gasLimit: numberToHex(b.gasLimit),
-      // @ts-ignore
       gasUsed: numberToHex(b.gasUsed),
       hash: '0x' + b.hash,
       logsBloom: '0x' + bloom,
@@ -400,8 +361,7 @@ class ApiService extends BaseService {
   }
 
   private transaction(ret: any): any {
-    const { actionInfo } = ret;
-    const { action, actHash, blkHash, blkHeight, sender, index } = actionInfo[0];
+    const { action, actHash, blkHash, blkHeight, sender, index } = ret;
     const { core, senderPubKey, signature } = action;
     const { nonce, gasLimit, gasPrice, transfer, execution } = core;
 
@@ -417,11 +377,17 @@ class ApiService extends BaseService {
       value = numberToHex(amount);
       to = _.size(contract) > 0 ? toEth(contract) : null;
       data = bufferToHex(d);
+    } else {
+      return null;
     }
 
     const r = bufferToHex(signature.slice(0, 32));
     const s = bufferToHex(signature.slice(32, 64));
-    const v = numberToHex(bufferToInt(signature.slice(64)));
+    let vi = bufferToInt(signature.slice(64));
+    if (vi < 27)
+      vi += 27;
+
+    const v = numberToHex(vi);
 
     return {
       blockHash: `0x${blkHash}`,
@@ -437,7 +403,6 @@ class ApiService extends BaseService {
       nonce: numberToHex(nonce),
       publicKey: bufferToHex(senderPubKey),
       r,
-      raw: '0x',
       s,
       standardV: v,
       v,
@@ -449,7 +414,7 @@ class ApiService extends BaseService {
 
   private async getTransactionCreates(data: any) {
     const transaction = this.transaction(data);
-    if (transaction.to != null)
+    if (transaction.to != null || transaction.blockHash == null)
       return transaction;
 
       let ret;
@@ -465,8 +430,8 @@ class ApiService extends BaseService {
 
   public async getTransactionByHash(params: any) {
     try {
-      const ret = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkingPending: true } });
-      return this.getTransactionCreates(ret);
+      const ret = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkPending: true } });
+      return this.getTransactionCreates(ret.actionInfo[0]);
     } catch (e) {
       return null;
     }
@@ -476,7 +441,7 @@ class ApiService extends BaseService {
     const [ blkHash, id ] = params;
     try {
       const ret = await antenna.iotx.getActions({ byBlk: { blkHash: removePrefix(blkHash), start: id, count: 1 } });
-      return this.getTransactionCreates(ret);
+      return this.getTransactionCreates(ret.actionInfo[0]);
     } catch (e) {
       return null;
     }
@@ -490,7 +455,7 @@ class ApiService extends BaseService {
 
     try {
       const ret = await antenna.iotx.getActions({ byBlk: { blkHash: b.hash, start: id, count: 1 } });
-      return this.getTransactionCreates(ret);
+      return this.getTransactionCreates(ret.actionInfo[0]);
     } catch (e) {
       return null;
     }

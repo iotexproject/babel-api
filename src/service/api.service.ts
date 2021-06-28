@@ -190,7 +190,7 @@ class ApiService extends BaseService {
 
     let transaction: any;
     try {
-      const action = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkingPending: true } });
+      const action = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkPending: true } });
       transaction = this.transaction(action);
     } catch (e) {
       return null;
@@ -465,7 +465,7 @@ class ApiService extends BaseService {
 
   public async getTransactionByHash(params: any) {
     try {
-      const ret = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkingPending: true } });
+      const ret = await antenna.iotx.getActions({ byHash: { actionHash: removePrefix(params[0]), checkPending: true } });
       return this.getTransactionCreates(ret);
     } catch (e) {
       return null;

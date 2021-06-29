@@ -1,12 +1,11 @@
 var BN = require('bn.js');
 var numberToBN = require('number-to-bn');
 import _ from 'lodash';
-import { bufferToInt } from 'ethereumjs-util';
+import { bufferToInt, unpadHexString } from 'ethereumjs-util';
 import WebSocket from 'ws';
 import crypto from 'crypto';
 import Antenna from 'iotex-antenna';
 import { fromString, fromBytes } from 'iotex-antenna/lib/crypto/address';
-import { hash160b } from 'iotex-antenna/lib/crypto/hash';
 import { IBlockMeta, IGetLogsRequest, ITopics, IBlockHeader, IBlockHeaderCore, ClientReadableStream, IStreamBlocksResponse, IStreamLogsResponse } from 'iotex-antenna/lib/rpc-method/types';
 import BaseService from './base.service';
 import { Exception } from '@common/exceptions';
@@ -381,17 +380,18 @@ class ApiService extends BaseService {
       return null;
     }
 
-    const r = bufferToHex(signature.slice(0, 32));
-    const s = bufferToHex(signature.slice(32, 64));
+    const r = '0x' + unpadHexString(bufferToHex(signature.slice(0, 32)));
+    const s = '0x' + unpadHexString(bufferToHex(signature.slice(32, 64)));
     let vi = bufferToInt(signature.slice(64));
     if (vi < 27)
       vi += 27;
 
     const v = numberToHex(vi);
+    const nilBlock = blkHeight == 0;
 
     return {
-      blockHash: `0x${blkHash}`,
-      blockNumber: numberToHex(blkHeight),
+      blockHash: nilBlock ? null : `0x${blkHash}`,
+      blockNumber: nilBlock? null : numberToHex(blkHeight),
       chainId: numberToHex(CHAIN_ID),
       condition: null,
       creates: null,

@@ -345,7 +345,7 @@ class ApiService extends BaseService {
 
     const b = await this.blockById(bid);
     if (!b)
-      return {};
+      return null;
 
     return this.getBlockWithTransaction(b, detail);
   }
@@ -366,7 +366,7 @@ class ApiService extends BaseService {
 
     let value = '0x0';
     let to;
-    let data = '';
+    let data = '0x';
     if (transfer != null) {
       const { amount, recipient } = transfer;
       value = numberToHex(amount);

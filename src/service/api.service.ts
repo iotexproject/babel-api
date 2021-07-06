@@ -184,7 +184,6 @@ class ApiService extends BaseService {
     const { receiptInfo } = ret;
     const { receipt, blkHash } = receiptInfo || {};
     const { status, blkHeight, actHash, gasConsumed, contractAddress, logs = [] } = receipt || {};
-
     const height = numberToHex(blkHeight || 0);
 
     let transaction: any;
@@ -258,13 +257,21 @@ class ApiService extends BaseService {
   }
 
   private async blockByHash(hash: string): Promise<IBlockMeta | undefined> {
-    const ret = await antenna.iotx.getBlockMetas({ byHash: { blkHash: hash } });
-    return _.get(ret, 'blkMetas[0]');
+    try {
+      const ret = await antenna.iotx.getBlockMetas({ byHash: { blkHash: hash } });
+      return _.get(ret, 'blkMetas[0]');
+    } catch (e) {
+      return undefined;
+    }
   }
   
   private async blockById(id: number): Promise<IBlockMeta | undefined> {
-    const ret = await antenna.iotx.getBlockMetas({ byIndex: { start: id, count: 1 } });
-    return _.get(ret, 'blkMetas[0]');
+    try {
+      const ret = await antenna.iotx.getBlockMetas({ byIndex: { start: id, count: 1 } });
+      return _.get(ret, 'blkMetas[0]');
+    } catch (e) {
+      return undefined;
+    }
   }
 
   public async getBlockTransactionCountByHash(params: any) {
@@ -354,7 +361,7 @@ class ApiService extends BaseService {
     const [ blkHash, detail = false ] = params;
     const b = await this.blockByHash(removePrefix(blkHash));
     if (!b)
-      return {};
+      return null;
 
     return this.getBlockWithTransaction(b, detail);
   }

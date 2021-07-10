@@ -5,6 +5,7 @@ import BaseController from '../base.controller';
 import { apiService } from '@service/index';
 import { logger } from '@common/utils';
 import { prometheus } from '@helpers/prometheus';
+import { Exception } from '@common/exceptions';
 
 const API_MAP: { [key: string]: string } = {
   ['eth_chainId']: 'getChainId',
@@ -112,8 +113,24 @@ class ApiController extends BaseController {
       try {
           result = await service[name](params, ws);
       } catch (e) {
-        result = { error: e.toString() };
         logger.error(`process ${name} rpc error: ${e.toString()}`);
+        if (e instanceof Exception) {
+          return {
+            ...ret,
+            error: {
+              code: e.code,
+              message: e.message
+            }
+          };
+        } else {
+          return {
+            ...ret,
+            error: {
+              code: e.code || -1,
+              message: e.details || e.toString()
+            }
+          };
+        }
       }
 
       logger.info(`< ${method}  ${typeof(result) == 'object' ? JSON.stringify(result) : result }`);

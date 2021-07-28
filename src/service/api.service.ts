@@ -127,18 +127,15 @@ class ApiService extends BaseService {
 
   public async call(params: any[]) {
     const [ tx ] = params;
-    const { from, to, data } = tx;
-    const address = fromEth(to);
-
+    const { from, to, data, value } = tx;
     if (to == '0xb1f8e55c7f64d203c1400b9d8555d050f94adf39')
       return;
 
     const d = Buffer.from(data.slice(2), 'hex');
-
     const { data: ret } = await antenna.iotx.readContract({
       execution: {
-        amount: '0',
-        contract: address,
+        amount: value || '0',
+        contract: fromEth(to),
         data: d
       },
       callerAddress: (from ? fromEth(from) : DEFAULT_CALLER)

@@ -134,7 +134,7 @@ class ApiService extends BaseService {
     const d = Buffer.from(data.slice(2), 'hex');
     const { data: ret } = await antenna.iotx.readContract({
       execution: {
-        amount: value || '0',
+        amount: toBN(value || 0).toString(10),
         contract: fromEth(to),
         data: d
       },

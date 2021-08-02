@@ -191,6 +191,9 @@ class ApiService extends BaseService {
       return null;
     }
 
+    if (!transaction)
+      return null;
+
     return {
       blockHash: '0x' + blkHash,
       blockNumber: height,
@@ -418,6 +421,9 @@ class ApiService extends BaseService {
 
   private async getTransactionCreates(data: any) {
     const transaction = this.transaction(data);
+    if (!transaction)
+      return null;
+
     if (transaction.to != null || transaction.blockHash == null)
       return transaction;
 

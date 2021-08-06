@@ -127,7 +127,7 @@ class ApiService extends BaseService {
 
   public async call(params: any[]) {
     const [ tx ] = params;
-    const { from, to, data, value } = tx;
+    const { from, to, data, value, gas, gasPrice } = tx;
     if (to == '0xb1f8e55c7f64d203c1400b9d8555d050f94adf39')
       return;
 
@@ -138,7 +138,9 @@ class ApiService extends BaseService {
         contract: fromEth(to),
         data: d
       },
-      callerAddress: (from ? fromEth(from) : DEFAULT_CALLER)
+      callerAddress: (from ? fromEth(from) : DEFAULT_CALLER),
+      gasLimit: gas ? toBN(gas).toString(10) : 21000,
+      gasPrice: gasPrice ? toBN(gasPrice).toString(10) : ''
     });
 
     return '0x' + ret;

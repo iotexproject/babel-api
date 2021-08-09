@@ -139,7 +139,7 @@ class ApiService extends BaseService {
         data: d
       },
       callerAddress: (from ? fromEth(from) : DEFAULT_CALLER),
-      gasLimit: gas ? toBN(gas).toString(10) : 21000,
+      gasLimit: from ? (gas ? toBN(gas).toString(10) : 21000) : 0,
       gasPrice: gasPrice ? toBN(gasPrice).toString(10) : ''
     });
 

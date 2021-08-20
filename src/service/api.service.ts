@@ -122,7 +122,7 @@ class ApiService extends BaseService {
   public async sendRawTransaction(params: any[]) {
     const [ data ] = params;
     const ret = await antenna.iotx.sendRawTransaction({ chainID: CHAIN_ID, data });
-    return '0x' + ret;
+    return _.startsWith(ret, '0x') ? ret : ('0x' + ret);
   }
 
   public async call(params: any[]) {
@@ -143,7 +143,7 @@ class ApiService extends BaseService {
       gasPrice: gasPrice ? toBN(gasPrice).toString(10) : ''
     });
 
-    return '0x' + ret;
+    return _.startsWith(ret, '0x') ? ret : ('0x' + ret);
   }
 
   public async estimateGas(params: any[]) {

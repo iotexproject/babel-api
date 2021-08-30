@@ -132,18 +132,21 @@ class ApiService extends BaseService {
       return;
 
     const d = Buffer.from(data.slice(2), 'hex');
-    const { data: ret } = await antenna.iotx.readContract({
-      execution: {
-        amount: toBN(value).toString(10),
-        contract: fromEth(to),
-        data: d
-      },
-      callerAddress: (from ? fromEth(from) : DEFAULT_CALLER),
-      gasLimit: toBN(gas).toString(10),
-      gasPrice: gasPrice ? toBN(gasPrice).toString(10) : ''
-    });
-
-    return _.startsWith(ret, '0x') ? ret : ('0x' + ret);
+    try {
+      const { data: ret } = await antenna.iotx.readContract({
+        execution: {
+          amount: toBN(value).toString(10),
+          contract: fromEth(to),
+          data: d
+        },
+        callerAddress: (from ? fromEth(from) : DEFAULT_CALLER),
+        gasLimit: toBN(gas).toString(10),
+        gasPrice: gasPrice ? toBN(gasPrice).toString(10) : ''
+      });
+      return _.startsWith(ret, '0x') ? ret : ('0x' + ret);
+    } catch (e) {
+      throw new Exception(Code.SERVER_ERROR, e.toString());
+    }
   }
 
   public async estimateGas(params: any[]) {

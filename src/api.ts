@@ -28,8 +28,8 @@ app.use(cors());
 app.use(handleRouter([ ...apiRoutes, ...healthRoutes ], 'api').routes());
 
 const server = http.createServer(app.callback());
-server.keepAliveTimeout = 120 * 1000;
-server.headersTimeout = 125 * 1000;
+server.keepAliveTimeout = 30 * 1000;
+server.headersTimeout = 30 * 1000;
 
 const wss = createWsServer(server);
 

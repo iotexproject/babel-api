@@ -1,0 +1,10 @@
+version: "2"
+services:
+  babel:
+    build: .
+    env_file:
+      - ./.env
+    ports:
+      - "8545:8545"
+  redis:
+    image: "redis:alpine"

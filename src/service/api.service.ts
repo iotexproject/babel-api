@@ -348,7 +348,7 @@ class ApiService extends BaseService {
     const [ block_id, detail = false ] = params;
 
     let bid = block_id;
-    if (block_id == 'latest' || block_id == '0xNaN') {
+    if (block_id == 'latest' || block_id == '0xNaN' || block_id == 'pending') {
       const ret = await antenna.iotx.getChainMeta({});
       bid = toNumber(_.get(ret, 'chainMeta.height', 0));
     } else {

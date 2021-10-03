@@ -28,11 +28,18 @@ app.use(cors());
 app.use(handleRouter([ ...apiRoutes, ...healthRoutes ], 'api').routes());
 
 const server = http.createServer(app.callback());
-server.keepAliveTimeout = 30 * 1000;
-server.headersTimeout = 30 * 1000;
+server.keepAliveTimeout = 0;
+server.headersTimeout = 0;
 
 const wss = createWsServer(server);
 
 server.listen(PORT, 65535, () => {
   logger.info(`api server start, hostname: ${os.hostname()}, port: ${PORT}`);
 });
+
+/*
+setInterval(() => {
+  if (gc) gc();
+  console.log(process.memoryUsage());
+}, 5000);
+*/

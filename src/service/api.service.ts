@@ -661,12 +661,16 @@ class ApiService extends BaseService {
   }
 
   public closeConnection(ws: WebSocket) {
+    if (ws == null) return;
+
     const subscribes: {[key: string]: Stream} = (<any>ws).subscribes || {};
     _.forEach(subscribes, (v: Stream) => v.cancel());
     (<any>ws).subscribes = null;
   }
 
   private addStream(ws: WebSocket, subscribe: string, stream: Stream) {
+    if (ws == null) return;
+
     const subscribes: {[key: string]: Stream} = (<any>ws).subscribes || {};
     if (_.isNil((<any>ws).subscribes))
       (<any>ws).subscribes = subscribes;
@@ -680,6 +684,8 @@ class ApiService extends BaseService {
   }
 
   private removeStream(ws: WebSocket, subscribe: string) {
+    if (ws == null) return;
+
     const subscribes: {[key: string]: Stream} = (<any>ws).subscribes || {};
     if (subscribes[subscribe])
       delete subscribes[subscribe];

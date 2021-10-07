@@ -32,7 +32,7 @@ sudo yum install nodejs
 ```
 
 ### 1.3. Configuration file
-create .env under root directory as below,
+create .env under root directory as below. **Note that you can use the default RPC endpoints (https://api.testnet.iotex.one:443 or https://api.iotex.one:443) or run one by yourself following [this](https://github.com/iotexproject/iotex-bootstrap).**
 
 for mainnet,
 ```

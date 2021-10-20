@@ -640,6 +640,8 @@ class ApiService extends BaseService {
   }
 
   public async subscribe(params: any, ws: WebSocket) {
+    if (_.isNil(ws)) return null;
+
     const [ title ] = params;
     if (title == 'newHeads') {
       return this.subscribeBlock(ws);
@@ -661,7 +663,7 @@ class ApiService extends BaseService {
   }
 
   public closeConnection(ws: WebSocket) {
-    if (ws == null) return;
+    if (_.isNil(ws)) return;
 
     const subscribes: {[key: string]: Stream} = (<any>ws).subscribes || {};
     _.forEach(subscribes, (v: Stream) => v.cancel());
@@ -684,7 +686,7 @@ class ApiService extends BaseService {
   }
 
   private removeStream(ws: WebSocket, subscribe: string) {
-    if (ws == null) return;
+    if (_.isNil(ws)) return;
 
     const subscribes: {[key: string]: Stream} = (<any>ws).subscribes || {};
     if (subscribes[subscribe])

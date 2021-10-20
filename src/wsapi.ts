@@ -9,11 +9,12 @@ export function createWsServer(server: http.Server) {
   const wss = new WebSocket.Server({ server });
 
   wss.on('connection', ws => {
+/*
     (<any>ws).isAlive = true;
     ws.on('pong', () => {
       (<any>ws).isAlive = true;
     });
-
+*/
     ws.on('message', async (data) => {
       const ret = await api.apiController.wsEntry(ws, `${data}`);
       try {
@@ -27,7 +28,7 @@ export function createWsServer(server: http.Server) {
       api.apiController.closeConnection(ws);
     })
   });
-
+/*
   const interval = setInterval(() => {
     wss.clients.forEach(ws => {
       if ((<any>ws).isAlive === false) return ws.terminate();
@@ -36,9 +37,9 @@ export function createWsServer(server: http.Server) {
       ws.ping(noop);
     });
   }, 30000);
-
+*/
   wss.on('close', () => {
-    clearInterval(interval);
+    //clearInterval(interval);
   });
 
   return wss;

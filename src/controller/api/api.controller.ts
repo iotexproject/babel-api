@@ -30,7 +30,7 @@ const API_MAP: { [key: string]: string } = {
   ['eth_mining']: 'isMining',
   ['eth_hashrate']: 'getHashrate',
   ['eth_accounts']: 'getAccounts',
-  ['eth_getStorageAt']: 'notImplememted',
+  ['eth_getStorageAt']: 'getStorageAt',
   ['eth_getBlockTransactionCountByHash']: 'getBlockTransactionCountByHash',
   ['eth_getBlockTransactionCountByNumber']: 'getBlockTransactionCountByNumber',
   ['eth_getUncleCountByBlockHash']: 'notImplememted',
@@ -112,7 +112,7 @@ class ApiController extends BaseController {
     if (name != null && service[name] != null) {
       try {
           result = await service[name](params, ws);
-      } catch (e) {
+      } catch (e: any) {
         logger.error(`process ${name} rpc error: ${e.toString()}`);
         if (e instanceof Exception) {
           return {

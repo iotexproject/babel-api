@@ -13,7 +13,7 @@ export function response({ action, server }: Params) {
     try {
       const data = await action(ctx);
       ctx.body = data || {};
-    } catch (e) {
+    } catch (e: any) {
       const params = JSON.stringify(ctx.params);
       const uid = get(ctx, `session.${server}.id`) || '-';
       if (e.code) {

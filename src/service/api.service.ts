@@ -144,7 +144,7 @@ class ApiService extends BaseService {
         gasPrice: gasPrice ? toBN(gasPrice).toString(10) : ''
       });
       return _.startsWith(ret, '0x') ? ret : ('0x' + ret);
-    } catch (e) {
+    } catch (e: any) {
       throw new Exception(Code.SERVER_ERROR, e.toString());
     }
   }
@@ -155,6 +155,15 @@ class ApiService extends BaseService {
 
     const ret = await antenna.iotx.estimateGas({ from, to, value, data });
     return numberToHex(ret);
+  }
+
+  public async getStorageAt(params: any[]) {
+    const [ contract, storage, block_id ] = params;
+    const ret = await antenna.iotx.readContractStorage({
+      contract: fromEth(contract),
+      key: Buffer.from(storage.slice(2), 'hex')
+    });
+    return bufferToHex(ret.data);
   }
 
   public async getCode(params: any[]) {
@@ -811,7 +820,6 @@ class ApiService extends BaseService {
 
     return subscription;
   }
-
 }
 
 export const apiService = new ApiService();

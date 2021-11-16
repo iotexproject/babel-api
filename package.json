@@ -18,7 +18,7 @@
   "dependencies": {
     "dotenv": "^8.2.0",
     "ethereum-public-key-to-address": "0.0.5",
-    "iotex-antenna": "0.31.0-beta-rlp-26",
+    "iotex-antenna": "0.31.0-beta-rlp-28",
     "joi": "^17.4.0",
     "koa": "^2.13.1",
     "koa-body": "^4.2.0",
